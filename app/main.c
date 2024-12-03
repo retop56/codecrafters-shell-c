@@ -4,11 +4,12 @@
 #include <stdbool.h>
 
 char * curr_tok;
+void handle_exit_command();
+void handle_echo_command();
+void handle_type_command();
 
 int main() {
   char input[100];
-  char temp[100];
-  char echo_result[100];
   while (true) {
     printf("$ ");
     fflush(stdout);
@@ -20,30 +21,55 @@ int main() {
     // Get first token to see which command it is
     curr_tok = strtok(input, " ");
     if (strcmp(curr_tok, "exit") == 0) {
-      // Get exit number
-      int exit_num = atoi(strtok(NULL, " "));
-      exit(exit_num);
+      handle_exit_command();
     } else if (strcmp(curr_tok, "echo") == 0) {
-      echo_result[0] = 0;
-      curr_tok = strtok(NULL, " ");
-      if (curr_tok == NULL) {
-        printf("\n");
-        continue;
-      } else {
-        strcat(echo_result, curr_tok);
-        curr_tok = strtok(NULL, " ");
-      }
-      temp[0] = 0;
-      while (curr_tok != NULL) {
-        sprintf(temp, " %s", curr_tok);
-        strcat(echo_result, temp);
-        curr_tok = strtok(NULL, " ");
-      } 
-      printf("%s\n", echo_result);
+      handle_echo_command();
+    } else if (strcmp(curr_tok, "type") == 0) {
+      handle_type_command();
     }
     else {
       printf("%s: command not found\n", input);
     }
   }
   return 0;
+}
+
+void handle_exit_command() {
+  // Get exit number
+  int exit_num = atoi(strtok(NULL, " "));
+  exit(exit_num);
+}
+
+void handle_echo_command() {
+  char temp[100];
+  char echo_result[100];
+  echo_result[0] = 0;
+  curr_tok = strtok(NULL, " ");
+  if (curr_tok == NULL) {
+    printf("\n");
+    return;
+  } else {
+    strcat(echo_result, curr_tok);
+    curr_tok = strtok(NULL, " ");
+  }
+  temp[0] = 0;
+  while (curr_tok != NULL) {
+    sprintf(temp, " %s", curr_tok);
+    strcat(echo_result, temp);
+    curr_tok = strtok(NULL, " ");
+  } 
+  printf("%s\n", echo_result);
+}
+
+void handle_type_command() {
+  curr_tok = strtok(NULL, " ");
+  if (
+    strcmp(curr_tok, "echo") == 0 ||
+    strcmp(curr_tok, "exit") == 0 ||
+    strcmp(curr_tok, "type") == 0) {
+      printf("%s is a shell builtin\n", curr_tok);
+    }
+  else {
+    printf("%s: not found\n", curr_tok);
+  }
 }
