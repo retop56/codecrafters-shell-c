@@ -46,15 +46,13 @@ void handle_exit_command() {
 void handle_echo_command() {
   char temp[100];
   char echo_result[100];
-  echo_result[0] = 0;
   curr_tok = strtok(NULL, " ");
   if (curr_tok == NULL) {
     printf("\n");
     return;
-  } else {
-    strcpy(echo_result, curr_tok);
-    curr_tok = strtok(NULL, " ");
-  }
+  } 
+  strcpy(echo_result, curr_tok);
+  curr_tok = strtok(NULL, " ");
   temp[0] = 0;
   while (curr_tok != NULL) {
     sprintf(temp, " %s", curr_tok);
