@@ -33,7 +33,7 @@ int main() {
       handle_type_command();
     }
     else {
-      printf("%s: command not found\n", input);
+      handle_program_execution(input);
     }
   }
   return 0;
@@ -113,3 +113,6 @@ void handle_type_command() {
   }
 }
 
+void handle_program_execution(char * prog) {
+  printf("%s: command not found\n", prog);
+}
