@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <errno.h>
 
 char * curr_tok;
 void handle_exit_command();
@@ -70,20 +73,42 @@ void handle_type_command() {
       printf("%s is a shell builtin\n", curr_tok);
     }
   else {
-    char exec_name[100];
+    char *exec_name = (char*) malloc(256 * sizeof(char));
     strcpy(exec_name, curr_tok);
-    printf("Exec name: %s\n", exec_name);
-    /*
-     Loop through every path in the 'PATH' env_var and
-     search for 'exec_name' in the path. If found, print it
-    */  
-    char *paths = getenv("PATH");
-    curr_tok = strtok(paths, ":");
-    while (curr_tok != NULL) {
-      printf("Found path: %s\n", curr_tok);
-      curr_tok = strtok(NULL, ":");
+
+    // Loop through every path in the 'PATH' env_var and
+    // search for 'exec_name' in the path. If found, print it
+
+    char *paths = strdup(getenv("PATH"));
+    if (paths == NULL) {
+      printf("Unable to get 'PATH' environment variable!\n");
+      exit(EXIT_FAILURE);
     }
-    // printf("%s: not found\n", curr_tok);
+    curr_tok = strtok(paths, ":");
+    int num_of_paths_checked = 0;
+    DIR *dirp;
+    struct dirent *files;
+    while (curr_tok != NULL) {
+      num_of_paths_checked++;
+      dirp = opendir(curr_tok);
+      if (dirp == NULL) {
+        curr_tok = strtok(NULL, ":");
+        continue;
+      } 
+      // Loop through every file in directory and check if it's a match with 'exec_name'
+      while ((files = readdir(dirp)) != NULL) {
+        if ((strcmp(files->d_name, exec_name)) == 0) {
+          printf("%s is %s/%s\n", exec_name, curr_tok, exec_name);
+          free(paths);
+          free(exec_name);
+          return;
+        }
+      }
+      curr_tok = strtok(NULL, ":");  // Get next directory from 'PATH'
+    }
+    printf("%s: not found\n", exec_name);
+    free(paths);
+    free(exec_name);
   }
 }
 
