@@ -97,6 +97,7 @@ void handle_type_command() {
       while ((files = readdir(dirp)) != NULL) {
         if ((strcmp(files->d_name, exec_name)) == 0) {
           printf("%s is %s/%s\n", exec_name, curr_tok, exec_name);
+          closedir(dirp);
           free(paths);
           free(exec_name);
           return;
@@ -105,6 +106,7 @@ void handle_type_command() {
       curr_tok = strtok(NULL, ":");  // Get next directory from 'PATH'
     }
     printf("%s: not found\n", exec_name);
+    closedir(dirp);
     free(paths);
     free(exec_name);
   }
