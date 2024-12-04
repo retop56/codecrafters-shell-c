@@ -17,7 +17,9 @@ int main() {
     printf("$ ");
     fflush(stdout);
     // Wait for user input
-    fgets(input, 100, stdin);
+    if (fgets(input, 100, stdin) == NULL) {
+      continue;
+    }
     // Replace \n at end of string with null
     int len_of_input = strlen(input);
     input[len_of_input - 1] = '\0';
@@ -84,11 +86,10 @@ void handle_type_command() {
     }
     curr_tok = strtok(paths, ":");
     int num_of_paths_checked = 0;
-    DIR *dirp;
     struct dirent *files;
     while (curr_tok != NULL) {
       num_of_paths_checked++;
-      dirp = opendir(curr_tok);
+      DIR *dirp = opendir(curr_tok);
       if (dirp == NULL) {
         curr_tok = strtok(NULL, ":");
         continue;
@@ -103,10 +104,10 @@ void handle_type_command() {
           return;
         }
       }
+      closedir(dirp);
       curr_tok = strtok(NULL, ":");  // Get next directory from 'PATH'
     }
     printf("%s: not found\n", exec_name);
-    closedir(dirp);
     free(paths);
     free(exec_name);
   }
