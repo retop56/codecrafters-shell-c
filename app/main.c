@@ -49,7 +49,7 @@ void handle_echo_command() {
     printf("\n");
     return;
   } else {
-    strcat(echo_result, curr_tok);
+    strcpy(echo_result, curr_tok);
     curr_tok = strtok(NULL, " ");
   }
   temp[0] = 0;
@@ -70,6 +70,15 @@ void handle_type_command() {
       printf("%s is a shell builtin\n", curr_tok);
     }
   else {
-    printf("%s: not found\n", curr_tok);
+    char exec_name[100];
+    strcpy(exec_name, curr_tok);
+    printf("Exec name: %s\n", exec_name);
+    /*
+     Loop through every path in the 'PATH' env_var and
+     search for 'exec_name' in the path. If found, print it
+    */  
+
+    // printf("%s: not found\n", curr_tok);
   }
 }
+
