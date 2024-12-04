@@ -77,7 +77,12 @@ void handle_type_command() {
      Loop through every path in the 'PATH' env_var and
      search for 'exec_name' in the path. If found, print it
     */  
-
+    char *paths = getenv("PATH");
+    curr_tok = strtok(paths, ":");
+    while (curr_tok != NULL) {
+      printf("Found path: %s\n", curr_tok);
+      curr_tok = strtok(NULL, ":");
+    }
     // printf("%s: not found\n", curr_tok);
   }
 }
