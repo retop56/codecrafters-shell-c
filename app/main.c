@@ -5,11 +5,13 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <errno.h>
+#include <unistd.h>
 
 char * curr_tok;
 void handle_exit_command();
 void handle_echo_command();
 void handle_type_command();
+void handle_program_execution();
 
 int main() {
   char input[100];
@@ -114,5 +116,17 @@ void handle_type_command() {
 }
 
 void handle_program_execution(char * prog) {
-  printf("%s: command not found\n", prog);
+  if ((curr_tok = strtok(NULL, " ")) == NULL) {
+    printf("%s: command not found\n", prog);
+    return;
+  }
+  char * prog_args = strdup(curr_tok);
+  curr_tok = strtok(NULL, " ");
+  while (curr_tok != NULL) {
+    strcat(prog_args, curr_tok);
+    curr_tok = strtok(NULL, " ");
+  }
+  char * full_path_with_prog = (char *) malloc(sizeof(char) * 1000);
+  snprintf(full_path_with_prog, 1000, "./%s %s\n", prog, prog_args);
+  printf("%s", full_path_with_prog);
 }
