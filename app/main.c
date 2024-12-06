@@ -39,7 +39,7 @@ int main() {
     } else if (strcmp(curr_tok, "pwd") == 0) {
       handle_pwd_command();
     } else if (strcmp(curr_tok, "cd") == 0) {
-      handle_cd_command();
+      handle_cd_command(strtok(NULL, " "));
     }
     else {
       handle_program_execution(input);
@@ -165,12 +165,28 @@ void handle_pwd_command() {
   printf("%s\n", pwd_str);
 }
 
-void handle_cd_command() {
-  curr_tok = strtok(NULL, " ");
-  if (chdir(curr_tok) != 0) {
-    printf("cd: %s: No such file or directory\n", curr_tok);
+void handle_cd_command(char * command) {
+  // curr_tok = strtok(NULL, " ");
+  // if (curr_tok[0] == '.') {
+  if (strncmp(command, "./", 2) == 0) {
+    char *fixed_arg = strdup(&command[1]);
+    char * new_dir = (char *) calloc(1000, sizeof(char));
+    strcat(new_dir, getenv("PWD"));
+    strcat(new_dir, fixed_arg);
+    if (chdir(new_dir) != 0) {
+      printf("cd: %s: No such file or directory\n", command);
+      return;
+    }
+    setenv("PWD", new_dir, 1);
     return;
   }
-  setenv("PWD", curr_tok, 1);
+  if (strncmp(command, "../", 3) == 0) {
+    return;
+  }
+  if (chdir(command) != 0) {
+    printf("cd: %s: No such file or directory\n", command);
+    return;
+  }
+  setenv("PWD", command, 1);
   // printf("%s\n", getenv("PWD"));
 }
