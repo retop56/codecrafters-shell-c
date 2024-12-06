@@ -50,7 +50,13 @@ int main() {
 
 void handle_exit_command() {
   // Get exit number
-  int exit_num = atoi(strtok(NULL, " "));
+  char * exit_arg = strtok(NULL, " ");
+  if (exit_arg == NULL) {
+    fprintf(stderr, "Unable to process argument to exit command!\n");
+    printf("Usage: exit <number>\n");
+    return;
+  }
+  int exit_num = atoi(exit_arg);
   exit(exit_num);
 }
 
@@ -168,7 +174,9 @@ void handle_pwd_command() {
 void handle_cd_command(char * command) {
   // curr_tok = strtok(NULL, " ");
   // if (curr_tok[0] == '.') {
-  if (strncmp(command, "./", 2) == 0) {
+  if (*command == '\0') {
+    return;
+  } else if (strncmp(command, "./", 2) == 0) {
     char *fixed_arg = strdup(&command[1]);
     char * new_dir = (char *) calloc(1000, sizeof(char));
     strcat(new_dir, getenv("PWD"));
@@ -179,14 +187,24 @@ void handle_cd_command(char * command) {
     }
     setenv("PWD", new_dir, 1);
     return;
-  }
-  if (strncmp(command, "../", 3) == 0) {
+  } else if (strncmp(command, "../", 3) == 0) {
+    char * new_command = strdup(command + 3);
+    free(command);
+    char * curr_pwd = getenv("PWD");
+    int i = strlen(curr_pwd);
+    for (; i > 0; i--) {
+      if (curr_pwd[i] == '/') {
+        break;
+      }
+    }
+    char * new_pwd = strndup(curr_pwd, i);
+    setenv("PWD", new_pwd, 1);
+    handle_cd_command(new_command);
     return;
   }
-  if (chdir(command) != 0) {
+  else if (chdir(command) != 0) {
     printf("cd: %s: No such file or directory\n", command);
     return;
   }
   setenv("PWD", command, 1);
-  // printf("%s\n", getenv("PWD"));
 }
