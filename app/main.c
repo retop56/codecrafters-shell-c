@@ -12,6 +12,7 @@ void handle_exit_command();
 void handle_echo_command();
 void handle_type_command();
 void handle_program_execution();
+void search_for_exec();
 
 int main() {
   char input[100];
@@ -75,43 +76,7 @@ void handle_type_command() {
       printf("%s is a shell builtin\n", curr_tok);
     }
   else {
-    char *exec_name = (char*) malloc(256 * sizeof(char));
-    strcpy(exec_name, curr_tok);
-
-    // Loop through every path in the 'PATH' env_var and
-    // search for 'exec_name' in the path. If found, print it
-
-    char *paths = strdup(getenv("PATH"));
-    if (paths == NULL) {
-      printf("Unable to get 'PATH' environment variable!\n");
-      exit(EXIT_FAILURE);
-    }
-    curr_tok = strtok(paths, ":");
-    int num_of_paths_checked = 0;
-    struct dirent *files;
-    while (curr_tok != NULL) {
-      num_of_paths_checked++;
-      DIR *dirp = opendir(curr_tok);
-      if (dirp == NULL) {
-        curr_tok = strtok(NULL, ":");
-        continue;
-      } 
-      // Loop through every file in directory and check if it's a match with 'exec_name'
-      while ((files = readdir(dirp)) != NULL) {
-        if ((strcmp(files->d_name, exec_name)) == 0) {
-          printf("%s is %s/%s\n", exec_name, curr_tok, exec_name);
-          closedir(dirp);
-          free(paths);
-          free(exec_name);
-          return;
-        }
-      }
-      closedir(dirp);
-      curr_tok = strtok(NULL, ":");  // Get next directory from 'PATH'
-    }
-    printf("%s: not found\n", exec_name);
-    free(paths);
-    free(exec_name);
+    search_for_exec();
   }
 }
 
@@ -129,4 +94,44 @@ void handle_program_execution(char * prog) {
   char * full_path_with_prog = (char *) malloc(sizeof(char) * 1000);
   snprintf(full_path_with_prog, 1000, "./%s %s\n", prog, prog_args);
   printf("%s", full_path_with_prog);
+}
+
+void search_for_exec() {
+  char *exec_name = (char*) malloc(256 * sizeof(char));
+  strcpy(exec_name, curr_tok);
+
+  // Loop through every path in the 'PATH' env_var and
+  // search for 'exec_name' in the path. If found, print it
+
+  char *paths = strdup(getenv("PATH"));
+  if (paths == NULL) {
+    printf("Unable to get 'PATH' environment variable!\n");
+    exit(EXIT_FAILURE);
+  }
+  curr_tok = strtok(paths, ":");
+  int num_of_paths_checked = 0;
+  struct dirent *files;
+  while (curr_tok != NULL) {
+    num_of_paths_checked++;
+    DIR *dirp = opendir(curr_tok);
+    if (dirp == NULL) {
+      curr_tok = strtok(NULL, ":");
+      continue;
+    } 
+    // Loop through every file in directory and check if it's a match with 'exec_name'
+    while ((files = readdir(dirp)) != NULL) {
+      if ((strcmp(files->d_name, exec_name)) == 0) {
+        printf("%s is %s/%s\n", exec_name, curr_tok, exec_name);
+        closedir(dirp);
+        free(paths);
+        free(exec_name);
+        return;
+      }
+    }
+    closedir(dirp);
+    curr_tok = strtok(NULL, ":");  // Get next directory from 'PATH'
+  }
+  printf("%s: not found\n", exec_name);
+  free(paths);
+  free(exec_name);
 }
