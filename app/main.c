@@ -94,13 +94,20 @@ void handle_program_execution(char * prog) {
     printf("%s: command not found\n", prog);
     return;
   }
-  char * prog_args = strdup(curr_tok);
+  char * prog_args = (char *) calloc(1000, sizeof(char));
+  strcat(prog_args, curr_tok);
   curr_tok = strtok(NULL, " ");
   while (curr_tok != NULL) {
     strcat(prog_args, curr_tok);
     curr_tok = strtok(NULL, " ");
   }
-  char * full_path_with_prog = (char *) malloc(sizeof(char) * 1000);
+  char * full_path = search_for_exec(prog);
+  if (full_path == NULL) {
+    fprintf(stderr, "Unable to find '%s'!\n", prog);
+    free(prog_args);
+    return;
+  }
+  char * full_path_with_prog = (char *) calloc(1000, sizeof(char));
   snprintf(full_path_with_prog, 1000, "./%s %s\n", prog, prog_args);
   printf("%s", full_path_with_prog);
 }
@@ -128,7 +135,6 @@ char * search_for_exec(char * exec_name) {
     // Loop through every file in directory and check if it's a match with 'exec_name'
     while ((files = readdir(dirp)) != NULL) {
       if ((strcmp(files->d_name, exec_name)) == 0) {
-        // printf("%s is %s/%s\n", exec_name, curr_tok, exec_name);
         char * result = (char *) malloc(1000 * sizeof(char));
         sprintf(result, "%s/%s", curr_tok, exec_name);
         closedir(dirp);
@@ -139,7 +145,6 @@ char * search_for_exec(char * exec_name) {
     closedir(dirp);
     curr_tok = strtok(NULL, ":");  // Get next directory from 'PATH'
   }
-  // printf("%s: not found\n", exec_name);
   free(paths);
   return NULL;
 }
