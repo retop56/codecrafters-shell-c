@@ -107,9 +107,9 @@ void handle_program_execution(char * prog) {
     free(prog_args);
     return;
   }
-  char * full_path_with_prog = (char *) calloc(1000, sizeof(char));
-  snprintf(full_path_with_prog, 1000, "./%s %s\n", prog, prog_args);
-  printf("%s", full_path_with_prog);
+  char * full_path_with_args = (char *) calloc(1000, sizeof(char));
+  snprintf(full_path_with_args, 1000, ".%s %s\n", full_path, prog_args);
+  printf("%s", full_path_with_args);
 }
 
 char * search_for_exec(char * exec_name) {
