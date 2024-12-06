@@ -13,6 +13,7 @@ void handle_echo_command();
 void handle_type_command();
 void handle_program_execution();
 char * search_for_exec();
+void handle_pwd_command();
 
 int main() {
   char input[100];
@@ -34,6 +35,8 @@ int main() {
       handle_echo_command();
     } else if (strcmp(curr_tok, "type") == 0) {
       handle_type_command();
+    } else if (strcmp(curr_tok, "pwd") == 0) {
+      handle_pwd_command();
     }
     else {
       handle_program_execution(input);
@@ -72,7 +75,8 @@ void handle_type_command() {
   if (
     strcmp(curr_tok, "echo") == 0 ||
     strcmp(curr_tok, "exit") == 0 ||
-    strcmp(curr_tok, "type") == 0) {
+    strcmp(curr_tok, "type") == 0 ||
+    strcmp(curr_tok, "pwd") == 0) {
       printf("%s is a shell builtin\n", curr_tok);
     }
   else {
@@ -109,7 +113,6 @@ void handle_program_execution(char * prog) {
   }
   char * full_path_with_args = (char *) calloc(1000, sizeof(char));
   snprintf(full_path_with_args, 1000, "%s %s\n", full_path, prog_args);
-  // printf("%s", full_path_with_args);
   system(full_path_with_args);
 }
 
@@ -148,4 +151,13 @@ char * search_for_exec(char * exec_name) {
   }
   free(paths);
   return NULL;
+}
+
+void handle_pwd_command() {
+  const char *pwd_str = getenv("PWD");
+  if (pwd_str == NULL) {
+    fprintf(stderr, "Unable to get pwd!\n");
+    return;
+  }
+  printf("%s\n", pwd_str);
 }
