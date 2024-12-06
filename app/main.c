@@ -76,7 +76,9 @@ void handle_type_command() {
       printf("%s is a shell builtin\n", curr_tok);
     }
   else {
-    search_for_exec();
+    char *exec_name = (char*) malloc(256 * sizeof(char));
+    strcpy(exec_name, curr_tok);
+    search_for_exec(exec_name);
   }
 }
 
@@ -96,9 +98,7 @@ void handle_program_execution(char * prog) {
   printf("%s", full_path_with_prog);
 }
 
-void search_for_exec() {
-  char *exec_name = (char*) malloc(256 * sizeof(char));
-  strcpy(exec_name, curr_tok);
+void search_for_exec(char * exec_name) {
 
   // Loop through every path in the 'PATH' env_var and
   // search for 'exec_name' in the path. If found, print it
@@ -124,7 +124,6 @@ void search_for_exec() {
         printf("%s is %s/%s\n", exec_name, curr_tok, exec_name);
         closedir(dirp);
         free(paths);
-        free(exec_name);
         return;
       }
     }
@@ -133,5 +132,4 @@ void search_for_exec() {
   }
   printf("%s: not found\n", exec_name);
   free(paths);
-  free(exec_name);
 }
