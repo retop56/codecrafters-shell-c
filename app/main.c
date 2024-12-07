@@ -40,7 +40,6 @@ int main() {
       handle_pwd_command();
     } else if (strcmp(curr_tok, "cd") == 0) {
       char * cd_arg = strtok(NULL, " ");
-      // printf("cd_arg: %s\n", cd_arg);
       handle_cd_command(cd_arg);
     }
     else {
@@ -200,8 +199,11 @@ void handle_cd_command(char * command) {
     setenv("PWD", new_pwd, 1);
     handle_cd_command(new_command);
     return;
-  }
-  else if (chdir(command) != 0) {
+  } else if (strncmp(command, '~', 1) == 0) {
+    char * home_dir = getenv("HOME");
+    setenv("PWD", home_dir, 1);
+    return;
+  } else if (chdir(command) != 0) {
     printf("cd: %s: No such file or directory\n", command);
     return;
   }
