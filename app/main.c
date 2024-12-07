@@ -14,7 +14,7 @@ void handle_type_command();
 void handle_program_execution(char * prog);
 char * search_for_exec(char * exec_name);
 void handle_pwd_command();
-void handle_cd_command();
+void handle_cd_command(char * command);
 
 int main() {
   char input[100];
@@ -39,7 +39,9 @@ int main() {
     } else if (strcmp(curr_tok, "pwd") == 0) {
       handle_pwd_command();
     } else if (strcmp(curr_tok, "cd") == 0) {
-      handle_cd_command(strtok(NULL, " "));
+      char * cd_arg = strtok(NULL, " ");
+      // printf("cd_arg: %s\n", cd_arg);
+      handle_cd_command(cd_arg);
     }
     else {
       handle_program_execution(input);
@@ -172,8 +174,6 @@ void handle_pwd_command() {
 }
 
 void handle_cd_command(char * command) {
-  // curr_tok = strtok(NULL, " ");
-  // if (curr_tok[0] == '.') {
   if (*command == '\0') {
     return;
   } else if (strncmp(command, "./", 2) == 0) {
@@ -189,7 +189,6 @@ void handle_cd_command(char * command) {
     return;
   } else if (strncmp(command, "../", 3) == 0) {
     char * new_command = strdup(command + 3);
-    free(command);
     char * curr_pwd = getenv("PWD");
     int i = strlen(curr_pwd);
     for (; i > 0; i--) {
