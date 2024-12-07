@@ -57,21 +57,22 @@ void handle_exit_command() {
     printf("Usage: exit <number>\n");
     return;
   }
-  int exit_num = atoi(exit_arg);
-  exit(exit_num);
+  exit(atoi(exit_arg));
 }
 
 void handle_echo_command() {
-  char temp[100];
-  char echo_result[100];
+  char temp[100] = {0};
+  char echo_result[100] = {0};
   curr_tok = strtok(NULL, " ");
   if (curr_tok == NULL) {
     printf("\n");
     return;
   } 
+  if (strncmp(curr_tok, "'", 1) == 0) {
+    
+  }
   strcpy(echo_result, curr_tok);
   curr_tok = strtok(NULL, " ");
-  temp[0] = 0;
   while (curr_tok != NULL) {
     sprintf(temp, " %s", curr_tok);
     strcat(echo_result, temp);
