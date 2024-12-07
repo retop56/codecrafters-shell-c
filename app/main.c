@@ -9,7 +9,7 @@
 
 char * curr_tok;
 void handle_exit_command();
-void handle_echo_command();
+void handle_echo_command(char * args);
 void handle_type_command();
 void handle_program_execution(char * prog);
 char * search_for_exec(char * exec_name);
@@ -33,7 +33,7 @@ int main() {
     if (strcmp(curr_tok, "exit") == 0) {
       handle_exit_command();
     } else if (strcmp(curr_tok, "echo") == 0) {
-      handle_echo_command();
+      handle_echo_command(&input[5]);
     } else if (strcmp(curr_tok, "type") == 0) {
       handle_type_command();
     } else if (strcmp(curr_tok, "pwd") == 0) {
@@ -60,25 +60,36 @@ void handle_exit_command() {
   exit(atoi(exit_arg));
 }
 
-void handle_echo_command() {
+void handle_echo_command(char * args) {
   char temp[100] = {0};
   char echo_result[100] = {0};
-  curr_tok = strtok(NULL, " ");
-  if (curr_tok == NULL) {
+  // curr_tok = strtok(NULL, " ");
+  if (args == NULL) {
     printf("\n");
     return;
   } 
-  if (strncmp(curr_tok, "'", 1) == 0) {
-    
+  if (strncmp(args, "'", 1) == 0) {
+    // curr_tok = strtok(&args[1], " ");
+    // strcat(echo_result, &args[1]);
+    // while ((curr_tok = strtok(NULL, "'\r")) != NULL){
+    //   printf("current echo_result: %s\n", echo_result);
+    //   printf("curr_tok: %s\n", curr_tok);
+    //   strcat(echo_result, curr_tok);
+    //   printf("new echo_result: %s\n", echo_result);
+    // }
+    // // sprintf(echo_result, "%s %s\n", &curr_tok[1], strtok(NULL, "'"));
+    // // printf("unquoted result: %s", echo_result);
+    // printf("%s\n", echo_result);
+    // return;
+    curr_tok = strtok(&args[1], "'\r");
+    strcat(echo_result, curr_tok);
+    while ((curr_tok = strtok(NULL, "'\r")) != NULL) {
+      strcat(echo_result, curr_tok);
+    }
+    printf("%s\n", echo_result);
+    return;
   }
-  strcpy(echo_result, curr_tok);
-  curr_tok = strtok(NULL, " ");
-  while (curr_tok != NULL) {
-    sprintf(temp, " %s", curr_tok);
-    strcat(echo_result, temp);
-    curr_tok = strtok(NULL, " ");
-  } 
-  printf("%s\n", echo_result);
+  printf("%s\n", args);
 }
 
 void handle_type_command() {
