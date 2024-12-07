@@ -199,7 +199,7 @@ void handle_cd_command(char * command) {
     setenv("PWD", new_pwd, 1);
     handle_cd_command(new_command);
     return;
-  } else if (strncmp(command, '~', 1) == 0) {
+  } else if (strncmp(command, "~", 1) == 0) {
     char * home_dir = getenv("HOME");
     setenv("PWD", home_dir, 1);
     return;
