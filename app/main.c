@@ -7,6 +7,8 @@
 #include <errno.h>
 #include <unistd.h>
 
+#define BUFF_LENGTH 1000
+
 char * curr_tok;
 void handle_exit_command();
 void handle_echo_command(char * args);
@@ -15,14 +17,15 @@ void handle_program_execution(char * prog);
 char * search_for_exec(char * exec_name);
 void handle_pwd_command();
 void handle_cd_command(char * command);
+void handle_cat_command();
 
 int main() {
-  char input[100];
+  char input[BUFF_LENGTH];
   while (true) {
     printf("$ ");
     fflush(stdout);
     // Wait for user input
-    if (fgets(input, 100, stdin) == NULL) {
+    if (fgets(input, BUFF_LENGTH, stdin) == NULL) {
       continue;
     }
     // Replace \n at end of string with null
@@ -30,17 +33,19 @@ int main() {
     input[len_of_input - 1] = '\0';
     // Get first token to see which command it is
     curr_tok = strtok(input, " ");
-    if (strcmp(curr_tok, "exit") == 0) {
+    if (strncmp(curr_tok, "exit", 4) == 0) {
       handle_exit_command();
-    } else if (strcmp(curr_tok, "echo") == 0) {
+    } else if (strncmp(curr_tok, "echo", 4) == 0) {
       handle_echo_command(&input[5]);
-    } else if (strcmp(curr_tok, "type") == 0) {
+    } else if (strncmp(curr_tok, "type", 4) == 0) {
       handle_type_command();
-    } else if (strcmp(curr_tok, "pwd") == 0) {
+    } else if (strncmp(curr_tok, "pwd", 3) == 0) {
       handle_pwd_command();
-    } else if (strcmp(curr_tok, "cd") == 0) {
+    } else if (strncmp(curr_tok, "cd", 2) == 0) {
       char * cd_arg = strtok(NULL, " ");
       handle_cd_command(cd_arg);
+    } else if (strncmp(curr_tok, "cat", 3) == 0) {
+      handle_cat_command();
     }
     else {
       handle_program_execution(input);
@@ -61,26 +66,13 @@ void handle_exit_command() {
 }
 
 void handle_echo_command(char * args) {
-  char temp[100] = {0};
-  char echo_result[100] = {0};
-  // curr_tok = strtok(NULL, " ");
+  char temp[BUFF_LENGTH] = {0};
+  char echo_result[BUFF_LENGTH] = {0};
   if (args == NULL) {
     printf("\n");
     return;
   } 
   if (strncmp(args, "'", 1) == 0) {
-    // curr_tok = strtok(&args[1], " ");
-    // strcat(echo_result, &args[1]);
-    // while ((curr_tok = strtok(NULL, "'\r")) != NULL){
-    //   printf("current echo_result: %s\n", echo_result);
-    //   printf("curr_tok: %s\n", curr_tok);
-    //   strcat(echo_result, curr_tok);
-    //   printf("new echo_result: %s\n", echo_result);
-    // }
-    // // sprintf(echo_result, "%s %s\n", &curr_tok[1], strtok(NULL, "'"));
-    // // printf("unquoted result: %s", echo_result);
-    // printf("%s\n", echo_result);
-    // return;
     curr_tok = strtok(&args[1], "'\r");
     strcat(echo_result, curr_tok);
     while ((curr_tok = strtok(NULL, "'\r")) != NULL) {
@@ -90,7 +82,6 @@ void handle_echo_command(char * args) {
     return;
   }
   strcat(echo_result, strtok(args, " "));
-  // printf("first tok on echo_result: %s\n", echo_result);
   curr_tok = strtok(NULL, " ");
   while (curr_tok != NULL) {
     sprintf(temp, "%s %s", echo_result, curr_tok);
@@ -228,4 +219,14 @@ void handle_cd_command(char * command) {
     return;
   }
   setenv("PWD", command, 1);
+}
+
+void handle_cat_command() {
+  char temp[BUFF_LENGTH] = {0};
+  strcat(temp, "cat ");
+  while ((curr_tok = strtok(NULL, "")) != NULL) {
+    strcat(temp, curr_tok);
+  }
+  system(temp);
+  return;
 }
