@@ -97,12 +97,20 @@ void handle_echo_command(char * args) {
     printf("%s\n", echo_result);
     return;
   }
-  strcat(echo_result, strtok(args, " "));
-  curr_tok = strtok(NULL, " ");
-  while (curr_tok != NULL) {
-    sprintf(temp, "%s %s", echo_result, curr_tok);
-    strcpy(echo_result, temp);
-    curr_tok = strtok(NULL, " ");
+  size_t result_index = 0;
+  size_t args_length = strlen(args);
+  for(size_t j = 0; j < args_length; j++) {
+    if (args[j] == ' ') {
+      while (j + 1 < args_length && args[j + 1] == ' ') {
+        j++;
+      }
+      echo_result[result_index++] = ' ';
+      continue;
+    }
+    if (args[j] == '\\') {
+      continue;
+    }
+    echo_result[result_index++] = args[j];
   }
   printf("%s\n", echo_result);
 }
