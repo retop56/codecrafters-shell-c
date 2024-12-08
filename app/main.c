@@ -86,7 +86,13 @@ void handle_echo_command(char * args) {
     strcat(echo_result, curr_tok);
     bool inside_quotes = false;
     while ((curr_tok = strtok(NULL, "\"\r")) != NULL) {
+      if (inside_quotes == false) {
+        strcat(echo_result, " ");
+        inside_quotes = true;
+        continue;
+      }
       strcat(echo_result, curr_tok);
+      inside_quotes = false;
     }
     printf("%s\n", echo_result);
     return;
