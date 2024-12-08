@@ -89,7 +89,15 @@ void handle_echo_command(char * args) {
     printf("%s\n", echo_result);
     return;
   }
-  printf("%s\n", args);
+  strcat(echo_result, strtok(args, " "));
+  // printf("first tok on echo_result: %s\n", echo_result);
+  curr_tok = strtok(NULL, " ");
+  while (curr_tok != NULL) {
+    sprintf(temp, "%s %s", echo_result, curr_tok);
+    strcpy(echo_result, temp);
+    curr_tok = strtok(NULL, " ");
+  }
+  printf("%s\n", echo_result);
 }
 
 void handle_type_command() {
