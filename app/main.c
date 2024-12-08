@@ -81,6 +81,16 @@ void handle_echo_command(char * args) {
     printf("%s\n", echo_result);
     return;
   }
+  if (strncmp(args, "\"", 1) == 0) {
+    curr_tok = strtok(&args[1], "\"\r");
+    strcat(echo_result, curr_tok);
+    bool inside_quotes = false;
+    while ((curr_tok = strtok(NULL, "\"\r")) != NULL) {
+      strcat(echo_result, curr_tok);
+    }
+    printf("%s\n", echo_result);
+    return;
+  }
   strcat(echo_result, strtok(args, " "));
   curr_tok = strtok(NULL, " ");
   while (curr_tok != NULL) {
