@@ -50,7 +50,7 @@ int main() {
       handle_cat_command();
     }
     else {
-      handle_program_execution(input);
+      handle_program_execution(input_copy);
     }
   }
   return 0;
@@ -161,9 +161,30 @@ void handle_type_command() {
   }
 }
 
-void handle_program_execution(char * prog) {
+void handle_program_execution(char * input) {
+  if (input[0] == '\'') {
+    char * prog_name_with_args = (char *) calloc(1000, sizeof(char));
+    sprintf(prog_name_with_args, "'%s'", strtok(input, "'"));
+    while ((curr_tok = strtok(NULL, "")) != NULL) {
+      strcat(prog_name_with_args, " ");
+      strcat(prog_name_with_args, curr_tok);
+    }
+    system(prog_name_with_args);
+    return;
+  } 
+  if (input[0] == '\"') {
+    char * prog_name_with_args = (char *) calloc(1000, sizeof(char));
+    sprintf(prog_name_with_args, "\"%s\"", strtok(input, "\""));
+    while ((curr_tok = strtok(NULL, "")) != NULL) {
+      strcat(prog_name_with_args, " ");
+      strcat(prog_name_with_args, curr_tok);
+    }
+    system(prog_name_with_args);
+    return;
+  }
+  char * cmd_name = strtok(input, " ");
   if ((curr_tok = strtok(NULL, " ")) == NULL) {
-    printf("%s: command not found\n", prog);
+    printf("%s: command not found\n", cmd_name);
     return;
   }
   char * prog_args = (char *) calloc(1000, sizeof(char));
@@ -173,9 +194,9 @@ void handle_program_execution(char * prog) {
     strcat(prog_args, curr_tok);
     curr_tok = strtok(NULL, " ");
   }
-  char * full_path = search_for_exec(prog);
+  char * full_path = search_for_exec(cmd_name);
   if (full_path == NULL) {
-    fprintf(stderr, "Unable to find '%s'!\n", prog);
+    fprintf(stderr, "Unable to find '%s'!\n", cmd_name);
     free(prog_args);
     return;
   }
