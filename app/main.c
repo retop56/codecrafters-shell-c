@@ -90,6 +90,9 @@ void handle_echo_command(char * args) {
     for (size_t args_i = 1; args_i < args_len; args_i++) {
       if (args[args_i] == '\"') {
         inside_quotes = !inside_quotes;
+        if (args_i + 1 >= args_len) { /* Reached end of args string*/
+          break;
+        }
         if (args_i + 1 < args_len && args[args_i + 1] == ' ') {
           while (args[args_i + 1] == ' ') {
             args_i++;
@@ -97,37 +100,22 @@ void handle_echo_command(char * args) {
           echo_result[echo_result_i++] = ' ';
         }
       } else if (args[args_i] == '\\') {
-        if (inside_quotes == true) {
-          echo_result[echo_result_i++] = args[args_i];
-          continue;
-        }
-        if (args_i + 1 < args_len &&
-            args[args_i + 1] == '\\' ||
-            args[args_i + 1] == '$' ||
-            args[args_i + 1] == '"') {
-              echo_result[echo_result_i++] = args[++args_i];
-            }
+          if (args[args_i + 1] == '\\') {
+            echo_result[echo_result_i++] = '\\';
+            args_i++;
+          } else if (args[args_i + 1] == '$') {
+            echo_result[echo_result_i++] = '$';
+            args_i++;
+          } else if (args[args_i + 1] == '"') {
+            echo_result[echo_result_i++] = '"';
+            args_i++;
+          } else {
+            echo_result[echo_result_i++] = args[args_i];
+            continue;
+          }
       } else {
         echo_result[echo_result_i++] = args[args_i];
       }
-      // if (args[args_i] == '\"' && (args_i + 1) < args_len && args[args_i + 1] == ' ') {
-      //   args_i++;
-      //   while (args_i < args_len && args[args_i] != '\"') {
-      //     args_i++;
-      //   }
-      //   if (args_i >= args_len) {
-      //     break;
-      //   }
-      //   echo_result[echo_result_i++] = ' ';
-      //   continue;
-      // } else if (args[args_i] == '\"' && args_i + 1 == args_len) {
-      //   continue;
-      // } else if (args[args_i] == '\\' && (args_i + 1) < args_len && (args[args_i + 1] == '\\' || args[args_i + 1] == '$' || args[args_i + 1] == '\"')) {
-      //   echo_result[echo_result_i++] = args[++args_i];
-      //   continue;
-      // } else {
-      //   echo_result[echo_result_i++] = args[args_i];
-      // }
     }
     printf("%s\n", echo_result);
     return;
