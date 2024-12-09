@@ -31,12 +31,14 @@ int main() {
     // Replace \n at end of string with null
     int len_of_input = strlen(input);
     input[len_of_input - 1] = '\0';
+    // Make copy of input
+    char * input_copy = strdup(input);
     // Get first token to see which command it is
     curr_tok = strtok(input, " ");
     if (strncmp(curr_tok, "exit", 4) == 0) {
       handle_exit_command();
     } else if (strncmp(curr_tok, "echo", 4) == 0) {
-      handle_echo_command(&input[5]);
+      handle_echo_command(&input_copy[5]);
     } else if (strncmp(curr_tok, "type", 4) == 0) {
       handle_type_command();
     } else if (strncmp(curr_tok, "pwd", 3) == 0) {
@@ -82,17 +84,50 @@ void handle_echo_command(char * args) {
     return;
   }
   if (strncmp(args, "\"", 1) == 0) {
-    curr_tok = strtok(&args[1], "\"\r");
-    strcat(echo_result, curr_tok);
-    bool inside_quotes = false;
-    while ((curr_tok = strtok(NULL, "\"\r")) != NULL) {
-      if (inside_quotes == false) {
-        strcat(echo_result, " ");
-        inside_quotes = true;
-        continue;
+    size_t echo_result_i = 0;
+    size_t args_len = strlen(args);
+    bool inside_quotes = true;
+    for (size_t args_i = 1; args_i < args_len; args_i++) {
+      if (args[args_i] == '\"') {
+        inside_quotes = !inside_quotes;
+        if (args_i + 1 < args_len && args[args_i + 1] == ' ') {
+          while (args[args_i + 1] == ' ') {
+            args_i++;
+          }
+          echo_result[echo_result_i++] = ' ';
+        }
+      } else if (args[args_i] == '\\') {
+        if (inside_quotes == true) {
+          echo_result[echo_result_i++] = args[args_i];
+          continue;
+        }
+        if (args_i + 1 < args_len &&
+            args[args_i + 1] == '\\' ||
+            args[args_i + 1] == '$' ||
+            args[args_i + 1] == '"') {
+              echo_result[echo_result_i++] = args[++args_i];
+            }
+      } else {
+        echo_result[echo_result_i++] = args[args_i];
       }
-      strcat(echo_result, curr_tok);
-      inside_quotes = false;
+      // if (args[args_i] == '\"' && (args_i + 1) < args_len && args[args_i + 1] == ' ') {
+      //   args_i++;
+      //   while (args_i < args_len && args[args_i] != '\"') {
+      //     args_i++;
+      //   }
+      //   if (args_i >= args_len) {
+      //     break;
+      //   }
+      //   echo_result[echo_result_i++] = ' ';
+      //   continue;
+      // } else if (args[args_i] == '\"' && args_i + 1 == args_len) {
+      //   continue;
+      // } else if (args[args_i] == '\\' && (args_i + 1) < args_len && (args[args_i + 1] == '\\' || args[args_i + 1] == '$' || args[args_i + 1] == '\"')) {
+      //   echo_result[echo_result_i++] = args[++args_i];
+      //   continue;
+      // } else {
+      //   echo_result[echo_result_i++] = args[args_i];
+      // }
     }
     printf("%s\n", echo_result);
     return;
