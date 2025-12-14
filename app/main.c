@@ -1,21 +1,22 @@
+#include <dirent.h>
+#include <limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 #include <sys/types.h>
-#include <dirent.h>
 #include <unistd.h>
 
 #define BUFF_LENGTH 1000
 
-char * curr_tok;
+char *curr_tok;
 void handle_exit_command();
-void handle_echo_command(char * args);
+void handle_echo_command(char *args);
 void handle_type_command();
-void handle_program_execution(char * prog);
-char * search_for_exec(char * exec_name);
+void handle_program_execution(char *prog);
+char *search_for_exec(char *exec_name);
 void handle_pwd_command();
-void handle_cd_command(char * command);
+void handle_cd_command(char *command);
 void handle_cat_command();
 
 int main() {
@@ -31,7 +32,7 @@ int main() {
     int len_of_input = strlen(input);
     input[len_of_input - 1] = '\0';
     // Make copy of input
-    char * input_copy = strdup(input);
+    char *input_copy = strdup(input);
     // Get first token to see which command it is
     curr_tok = strtok(input, " ");
     if (strncmp(curr_tok, "exit", 4) == 0) {
@@ -43,12 +44,11 @@ int main() {
     } else if (strncmp(curr_tok, "pwd", 3) == 0) {
       handle_pwd_command();
     } else if (strncmp(curr_tok, "cd", 2) == 0) {
-      char * cd_arg = strtok(NULL, " ");
+      char *cd_arg = strtok(NULL, " ");
       handle_cd_command(cd_arg);
     } else if (strncmp(curr_tok, "cat", 3) == 0) {
       handle_cat_command();
-    }
-    else {
+    } else {
       handle_program_execution(input_copy);
     }
   }
@@ -67,13 +67,13 @@ void handle_exit_command() {
   exit(0);
 }
 
-void handle_echo_command(char * args) {
+void handle_echo_command(char *args) {
   char temp[BUFF_LENGTH] = {0};
   char echo_result[BUFF_LENGTH] = {0};
   if (args == NULL) {
     printf("\n");
     return;
-  } 
+  }
   if (strncmp(args, "'", 1) == 0) {
     curr_tok = strtok(&args[1], "'\r");
     strcat(echo_result, curr_tok);
@@ -100,19 +100,19 @@ void handle_echo_command(char * args) {
           echo_result[echo_result_i++] = ' ';
         }
       } else if (args[args_i] == '\\') {
-          if (args[args_i + 1] == '\\') {
-            echo_result[echo_result_i++] = '\\';
-            args_i++;
-          } else if (args[args_i + 1] == '$') {
-            echo_result[echo_result_i++] = '$';
-            args_i++;
-          } else if (args[args_i + 1] == '"') {
-            echo_result[echo_result_i++] = '"';
-            args_i++;
-          } else {
-            echo_result[echo_result_i++] = args[args_i];
-            continue;
-          }
+        if (args[args_i + 1] == '\\') {
+          echo_result[echo_result_i++] = '\\';
+          args_i++;
+        } else if (args[args_i + 1] == '$') {
+          echo_result[echo_result_i++] = '$';
+          args_i++;
+        } else if (args[args_i + 1] == '"') {
+          echo_result[echo_result_i++] = '"';
+          args_i++;
+        } else {
+          echo_result[echo_result_i++] = args[args_i];
+          continue;
+        }
       } else {
         echo_result[echo_result_i++] = args[args_i];
       }
@@ -122,7 +122,7 @@ void handle_echo_command(char * args) {
   }
   size_t result_index = 0;
   size_t args_length = strlen(args);
-  for(size_t j = 0; j < args_length; j++) {
+  for (size_t j = 0; j < args_length; j++) {
     if (args[j] == ' ') {
       while (j + 1 < args_length && args[j + 1] == ' ') {
         j++;
@@ -140,31 +140,29 @@ void handle_echo_command(char * args) {
 
 void handle_type_command() {
   curr_tok = strtok(NULL, " ");
-  if (
-    strcmp(curr_tok, "echo") == 0 ||
-    strcmp(curr_tok, "exit") == 0 ||
-    strcmp(curr_tok, "type") == 0 ||
-    strcmp(curr_tok, "pwd") == 0) {
-      printf("%s is a shell builtin\n", curr_tok);
-    }
-  else {
-    char *exec_name = (char*) malloc(256 * sizeof(char));
+  if (strcmp(curr_tok, "echo") == 0 || strcmp(curr_tok, "exit") == 0 ||
+      strcmp(curr_tok, "type") == 0 || strcmp(curr_tok, "pwd") == 0) {
+    printf("%s is a shell builtin\n", curr_tok);
+  } else {
+    char *exec_name = (char *)malloc(256 * sizeof(char));
     strcpy(exec_name, curr_tok);
-    char * full_path = search_for_exec(exec_name); 
+    char *full_path = search_for_exec(exec_name);
     if (full_path == NULL) {
       printf("%s: not found\n", exec_name);
+      free(full_path);
+      free(exec_name);
       return;
-    } 
-     /*Check permissions on file */
+    }
+    /*Check permissions on file */
     printf("%s is %s\n", exec_name, full_path);
     free(full_path);
     free(exec_name);
   }
 }
 
-void handle_program_execution(char * input) {
+void handle_program_execution(char *input) {
   if (input[0] == '\'') {
-    char * prog_name_with_args = (char *) calloc(1000, sizeof(char));
+    char *prog_name_with_args = (char *)calloc(1000, sizeof(char));
     sprintf(prog_name_with_args, "'%s'", strtok(input, "'"));
     while ((curr_tok = strtok(NULL, "")) != NULL) {
       strcat(prog_name_with_args, " ");
@@ -172,9 +170,9 @@ void handle_program_execution(char * input) {
     }
     system(prog_name_with_args);
     return;
-  } 
+  }
   if (input[0] == '\"') {
-    char * prog_name_with_args = (char *) calloc(1000, sizeof(char));
+    char *prog_name_with_args = (char *)calloc(1000, sizeof(char));
     sprintf(prog_name_with_args, "\"%s\"", strtok(input, "\""));
     while ((curr_tok = strtok(NULL, "")) != NULL) {
       strcat(prog_name_with_args, " ");
@@ -183,65 +181,69 @@ void handle_program_execution(char * input) {
     system(prog_name_with_args);
     return;
   }
-  char * cmd_name = strtok(input, " ");
+  char *cmd_name = strtok(input, " ");
   if ((curr_tok = strtok(NULL, " ")) == NULL) {
     printf("%s: command not found\n", cmd_name);
     return;
   }
-  char * prog_args = (char *) calloc(1000, sizeof(char));
+  char *prog_args = (char *)calloc(1000, sizeof(char));
   strcat(prog_args, curr_tok);
   curr_tok = strtok(NULL, " ");
   while (curr_tok != NULL) {
     strcat(prog_args, curr_tok);
     curr_tok = strtok(NULL, " ");
   }
-  char * full_path = search_for_exec(cmd_name);
+  char *full_path = search_for_exec(cmd_name);
   if (full_path == NULL) {
     fprintf(stderr, "Unable to find '%s'!\n", cmd_name);
     free(prog_args);
     return;
   }
-  char * full_path_with_args = (char *) calloc(1000, sizeof(char));
+  char *full_path_with_args = (char *)calloc(1000, sizeof(char));
   snprintf(full_path_with_args, 1000, "%s %s\n", full_path, prog_args);
   system(full_path_with_args);
 }
 
-char * search_for_exec(char * exec_name) {
-
-  // Loop through every path in the 'PATH' env_var and
-  // search for 'exec_name' in the path. If found, print it
-
+char *search_for_exec(char *exec_name) {
+  char *full_path = (char *)malloc(PATH_MAX * sizeof(char));
   char *paths = strdup(getenv("PATH"));
+  char *start_of_paths = paths;
   if (paths == NULL) {
     printf("Unable to get 'PATH' environment variable!\n");
     exit(EXIT_FAILURE);
   }
+  /*printf("paths received : %s\n", paths); //Debug line*/
   curr_tok = strtok(paths, ":");
-  int num_of_paths_checked = 0;
-  struct dirent *files;
+  // Loop through every path in the 'PATH' env_var and
+  // search for 'exec_name' in the path. If found, print it
+  DIR *dirp;
   while (curr_tok != NULL) {
-    num_of_paths_checked++;
-    DIR *dirp = opendir(curr_tok);
+    /*printf("Currently looking at '%s'\n", curr_tok);*/ // Debug line
+    dirp = opendir(curr_tok);
     if (dirp == NULL) {
       curr_tok = strtok(NULL, ":");
       continue;
-    } 
-    // Loop through every file in directory and check if it's a match with 'exec_name'
-    while ((files = readdir(dirp)) != NULL) {
-      if ((strcmp(files->d_name, exec_name)) == 0 &&
-          (access(files->d_name, X_OK)) == 0) {/*Check if file has executable permission */
-            printf("'%s%s' is an executable file!\n", files->d_name, exec_name);
-            char * result = (char *) malloc(1000 * sizeof(char));
-            sprintf(result, "%s/%s", curr_tok, exec_name);
-            closedir(dirp);
-            free(paths);
-            return result;
+    }
+    struct dirent *pDirent;
+    // Loop through every entry in directory
+    while ((pDirent = readdir(dirp)) != NULL) {
+      // Found matching file, now need to check if it's executable
+      if (strcmp(exec_name, pDirent->d_name) == 0) {
+        sprintf(full_path, "%s/%s", curr_tok,
+                exec_name); // Construct full path name
+        if ((access(full_path, X_OK)) == 0) {
+          /*printf("%s is executable!\n", full_path);*/ //Debug line
+          closedir(dirp);
+          free(start_of_paths);
+          return full_path;
+        }
       }
     }
-    closedir(dirp);
-    curr_tok = strtok(NULL, ":");  // Get next directory from 'PATH'
+    curr_tok = strtok(NULL, ":");
   }
-  free(paths);
+  free(full_path);
+  free(start_of_paths);
+  closedir(dirp);
   return NULL;
 }
 
@@ -254,12 +256,12 @@ void handle_pwd_command() {
   printf("%s\n", pwd_str);
 }
 
-void handle_cd_command(char * command) {
+void handle_cd_command(char *command) {
   if (*command == '\0') {
     return;
   } else if (strncmp(command, "./", 2) == 0) {
     char *fixed_arg = strdup(&command[1]);
-    char * new_dir = (char *) calloc(1000, sizeof(char));
+    char *new_dir = (char *)calloc(1000, sizeof(char));
     strcat(new_dir, getenv("PWD"));
     strcat(new_dir, fixed_arg);
     if (chdir(new_dir) != 0) {
@@ -269,20 +271,20 @@ void handle_cd_command(char * command) {
     setenv("PWD", new_dir, 1);
     return;
   } else if (strncmp(command, "../", 3) == 0) {
-    char * new_command = strdup(command + 3);
-    char * curr_pwd = getenv("PWD");
+    char *new_command = strdup(command + 3);
+    char *curr_pwd = getenv("PWD");
     int i = strlen(curr_pwd);
     for (; i > 0; i--) {
       if (curr_pwd[i] == '/') {
         break;
       }
     }
-    char * new_pwd = strndup(curr_pwd, i);
+    char *new_pwd = strndup(curr_pwd, i);
     setenv("PWD", new_pwd, 1);
     handle_cd_command(new_command);
     return;
   } else if (strncmp(command, "~", 1) == 0) {
-    char * home_dir = getenv("HOME");
+    char *home_dir = getenv("HOME");
     setenv("PWD", home_dir, 1);
     return;
   } else if (chdir(command) != 0) {
