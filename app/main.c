@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <dirent.h>
-#include <errno.h>
 #include <unistd.h>
 
 #define BUFF_LENGTH 1000
@@ -58,13 +57,14 @@ int main() {
 
 void handle_exit_command() {
   // Get exit number
-  char * exit_arg = strtok(NULL, " ");
-  if (exit_arg == NULL) {
-    fprintf(stderr, "Unable to process argument to exit command!\n");
-    printf("Usage: exit <number>\n");
-    return;
-  }
-  exit(atoi(exit_arg));
+  /*char * exit_arg = strtok(NULL, " ");*/
+  /*if (exit_arg == NULL) {*/
+  /*  fprintf(stderr, "Unable to process argument to exit command!\n");*/
+  /*  printf("Usage: exit <number>\n");*/
+  /*  return;*/
+  /*}*/
+  /*exit(atoi(exit_arg));*/
+  exit(0);
 }
 
 void handle_echo_command(char * args) {
@@ -155,6 +155,7 @@ void handle_type_command() {
       printf("%s: not found\n", exec_name);
       return;
     } 
+     /*Check permissions on file */
     printf("%s is %s\n", exec_name, full_path);
     free(full_path);
     free(exec_name);
@@ -227,12 +228,14 @@ char * search_for_exec(char * exec_name) {
     } 
     // Loop through every file in directory and check if it's a match with 'exec_name'
     while ((files = readdir(dirp)) != NULL) {
-      if ((strcmp(files->d_name, exec_name)) == 0) {
-        char * result = (char *) malloc(1000 * sizeof(char));
-        sprintf(result, "%s/%s", curr_tok, exec_name);
-        closedir(dirp);
-        free(paths);
-        return result;
+      if ((strcmp(files->d_name, exec_name)) == 0 &&
+          (access(files->d_name, X_OK)) == 0) {/*Check if file has executable permission */
+            printf("'%s%s' is an executable file!\n", files->d_name, exec_name);
+            char * result = (char *) malloc(1000 * sizeof(char));
+            sprintf(result, "%s/%s", curr_tok, exec_name);
+            closedir(dirp);
+            free(paths);
+            return result;
       }
     }
     closedir(dirp);
