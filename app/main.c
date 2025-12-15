@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #define BUFF_LENGTH 1000
@@ -23,7 +24,7 @@ int main() {
   char input[BUFF_LENGTH];
   while (true) {
     printf("$ ");
-    fflush(stdout);
+    fflush(NULL);
     // Wait for user input
     if (fgets(input, BUFF_LENGTH, stdin) == NULL) {
       continue;
@@ -55,17 +56,7 @@ int main() {
   return 0;
 }
 
-void handle_exit_command() {
-  // Get exit number
-  /*char * exit_arg = strtok(NULL, " ");*/
-  /*if (exit_arg == NULL) {*/
-  /*  fprintf(stderr, "Unable to process argument to exit command!\n");*/
-  /*  printf("Usage: exit <number>\n");*/
-  /*  return;*/
-  /*}*/
-  /*exit(atoi(exit_arg));*/
-  exit(0);
-}
+void handle_exit_command() { exit(0); }
 
 void handle_echo_command(char *args) {
   char temp[BUFF_LENGTH] = {0};
@@ -161,47 +152,60 @@ void handle_type_command() {
 }
 
 void handle_program_execution(char *input) {
-  if (input[0] == '\'') {
-    char *prog_name_with_args = (char *)calloc(1000, sizeof(char));
-    sprintf(prog_name_with_args, "'%s'", strtok(input, "'"));
-    while ((curr_tok = strtok(NULL, "")) != NULL) {
-      strcat(prog_name_with_args, " ");
-      strcat(prog_name_with_args, curr_tok);
-    }
-    system(prog_name_with_args);
-    return;
+  char *prog_args[100];
+  size_t num_of_args = 0;
+  char *curr_arg = strtok(input, " ");
+  while (curr_arg != NULL) {
+    prog_args[num_of_args++] = strdup(curr_arg);
+    curr_arg = strtok(NULL, " ");
   }
-  if (input[0] == '\"') {
-    char *prog_name_with_args = (char *)calloc(1000, sizeof(char));
-    sprintf(prog_name_with_args, "\"%s\"", strtok(input, "\""));
-    while ((curr_tok = strtok(NULL, "")) != NULL) {
-      strcat(prog_name_with_args, " ");
-      strcat(prog_name_with_args, curr_tok);
-    }
-    system(prog_name_with_args);
-    return;
-  }
-  char *cmd_name = strtok(input, " ");
-  if ((curr_tok = strtok(NULL, " ")) == NULL) {
-    printf("%s: command not found\n", cmd_name);
-    return;
-  }
-  char *prog_args = (char *)calloc(1000, sizeof(char));
-  strcat(prog_args, curr_tok);
-  curr_tok = strtok(NULL, " ");
-  while (curr_tok != NULL) {
-    strcat(prog_args, curr_tok);
-    curr_tok = strtok(NULL, " ");
-  }
-  char *full_path = search_for_exec(cmd_name);
+  char *full_path = search_for_exec(prog_args[0]);
   if (full_path == NULL) {
-    fprintf(stderr, "Unable to find '%s'!\n", cmd_name);
-    free(prog_args);
+    printf("%s: command not found\n", input);
     return;
   }
-  char *full_path_with_args = (char *)calloc(1000, sizeof(char));
-  snprintf(full_path_with_args, 1000, "%s %s\n", full_path, prog_args);
-  system(full_path_with_args);
+  printf("Program was passed %zu args (including program name).\n",
+         num_of_args);
+  /*fflush(stdout);*/
+  printf("Arg #0 (program name): %s\n", prog_args[0]);
+  /*fflush(stdout);*/
+  for (size_t i = 1; i < num_of_args; i++) {
+    printf("Arg #%zu: %s\n", i, prog_args[i]);
+    /*fflush(stdout);*/
+  }
+  // Calculate length of full_path w/ args (and null at the end)
+  size_t len_of_full_path = strlen(full_path);
+  for (size_t i = 1; i < num_of_args; i++) {
+    len_of_full_path += 1; // Add one for space in between args
+    len_of_full_path += strlen(prog_args[i]);
+  }
+  len_of_full_path += 1; // Add one at end for null;
+  char *real_full_path = (char *)malloc(len_of_full_path * sizeof(char));
+  real_full_path[0] = '\0';
+  strcat(real_full_path, full_path);
+  for (size_t i = 1; i < num_of_args; i++) {
+    strcat(real_full_path, " ");
+    strcat(real_full_path, prog_args[i]);
+  }
+  prog_args[0] = full_path;
+  prog_args[num_of_args] = NULL;
+  pid_t p;
+  /*fflush(stdout);*/
+  p = fork();
+  switch (p) {
+  case -1:
+    printf("Fork failed!\n");
+    exit(EXIT_FAILURE);
+  case 0:
+    execvp(prog_args[0], prog_args);
+    printf("Unreachable");
+    break;
+  default:
+    free(full_path);
+    free(real_full_path);
+    wait(&p);
+    break;
+  }
 }
 
 char *search_for_exec(char *exec_name) {
@@ -232,7 +236,7 @@ char *search_for_exec(char *exec_name) {
         sprintf(full_path, "%s/%s", curr_tok,
                 exec_name); // Construct full path name
         if ((access(full_path, X_OK)) == 0) {
-          /*printf("%s is executable!\n", full_path);*/ //Debug line
+          /*printf("%s is executable!\n", full_path);*/ // Debug line
           closedir(dirp);
           free(start_of_paths);
           return full_path;
