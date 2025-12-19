@@ -16,8 +16,8 @@ int main() {
     // Replace \n at end of string with null
     int len_of_input = strlen(input);
     input[len_of_input - 1] = '\0';
-    // Creates arg_obj and populates it with arguments from input
-    add_args(ao, (char *)&input);
+    ao->input = (char *)&input;
+    add_args(ao);
     if (strncmp(ao->args[0], "exit", 4) == 0) {
       handle_exit_command();
     } else if (strncmp(ao->args[0], "echo", 4) == 0) {
