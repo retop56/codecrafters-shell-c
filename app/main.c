@@ -2,7 +2,6 @@
 #include "argparser.h"
 #include "cc_shell.h"
 #include "handle_commands.h"
-char *curr_tok;
 char input[BUFF_LENGTH];
 
 int main() {
@@ -19,17 +18,17 @@ int main() {
     input[len_of_input - 1] = '\0';
     // Creates arg_obj and populates it with arguments from input
     add_args(ao, (char *)&input);
-    // Make copy of input
-    /*char *input_copy = strdup(input);*/
-    // Get first token to see which command it is
-    /*char *curr_tok = strtok(input, " ");*/
     if (strncmp(ao->args[0], "exit", 4) == 0) {
       handle_exit_command();
     } else if (strncmp(ao->args[0], "echo", 4) == 0) {
       handle_echo_command(ao);
     } else if (strncmp(ao->args[0], "type", 4) == 0) {
       handle_type_command(ao);
-    }else {
+    } else if (strncmp(ao->args[0], "pwd", 3) == 0) {
+      handle_pwd_command();
+    } else if (strncmp(ao->args[0], "cd", 2) == 0) {
+      handle_cd_command(ao->args[1]);
+    } else {
       handle_program_execution(ao);
     }
     clear_args(ao);

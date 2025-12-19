@@ -2,7 +2,6 @@
 #include "handle_commands.h"
 #include "arg_obj_def.h"
 #include "argparser.h"
-extern char * curr_tok;
 
 void handle_exit_command() { exit(0); }
 
@@ -42,86 +41,25 @@ void handle_program_execution(struct arg_obj * ao) {
     printf("%s: command not found\n", ao->args[0]);
     return;
   }
-  /*printf("full_path: %s\n", full_path);*/
-  /*ao->args[0] = full_path;*/
-  /*// Calculate length of full_path w/ args (and null at the end)*/
-  /*size_t len_of_full_path = strlen(full_path);*/
-  /*for (size_t i = 1; i < ao->size; i++) {*/
-  /*  len_of_full_path += 1; // Add one for space between args*/
-  /*  len_of_full_path += strlen(ao->args[i]);*/
-  /*}*/
-  /*len_of_full_path += 1; // Add one at end for null*/
-  /*char * real_full_path = (char *)malloc(len_of_full_path * sizeof(char));*/
-  /*real_full_path[0] = '\0';*/
-  /*strcat(real_full_path, full_path);*/
-  /*for(size_t i = 1; i < ao->size; i++) {*/
-  /*  strcat(real_full_path, " ");*/
-  /*  strcat(real_full_path, ao->args[i]);*/
-  /*}*/
   pid_t p = fork();
   switch (p) {
     case -1:
       fprintf(stderr, "Fork failed!\n");
       exit(EXIT_FAILURE); 
     case 0:
-      // Write code for executing file
-      // Make sure last argument in list is NULL
+      /* 
+       * Make sure last argument in list is NULL to satisfy requirements
+       * of execvp
+      */
       ao->args[ao->size] = (char *)NULL;
       execvp(full_path, ao->args);
       break;
     default:
       free(full_path);
-      /*free(real_full_path);*/
       wait(&p);
   }
 }
 
-/*void handle_program_execution(char *input) {*/
-/*  char *prog_args[100];*/
-/*  size_t num_of_args = 0;*/
-/*  char *curr_arg = strtok(input, " ");*/
-/*  while (curr_arg != NULL) {*/
-/*    prog_args[num_of_args++] = strdup(curr_arg);*/
-/*    curr_arg = strtok(NULL, " ");*/
-/*  }*/
-/*  char *full_path = search_for_exec(prog_args[0]);*/
-/*  if (full_path == NULL) {*/
-/*    printf("%s: command not found\n", input);*/
-/*    return;*/
-/*  }*/
-/*  // Calculate length of full_path w/ args (and null at the end)*/
-/*  size_t len_of_full_path = strlen(full_path);*/
-/*  for (size_t i = 1; i < num_of_args; i++) {*/
-/*    len_of_full_path += 1; // Add one for space in between args*/
-/*    len_of_full_path += strlen(prog_args[i]);*/
-/*  }*/
-/*  len_of_full_path += 1; // Add one at end for null;*/
-/*  char *real_full_path = (char *)malloc(len_of_full_path * sizeof(char));*/
-/*  real_full_path[0] = '\0';*/
-/*  strcat(real_full_path, full_path);*/
-/*  for (size_t i = 1; i < num_of_args; i++) {*/
-/*    strcat(real_full_path, " ");*/
-/*    strcat(real_full_path, prog_args[i]);*/
-/*  }*/
-/*  /*prog_args[0] = full_path;*/
-/*  prog_args[num_of_args] = NULL;*/
-/*  pid_t p;*/
-/*  /*fflush(stdout);*/
-/*  p = fork();*/
-/*  switch (p) {*/
-/*  case -1:*/
-/*    printf("Fork failed!\n");*/
-/*    exit(EXIT_FAILURE);*/
-/*  case 0:*/
-/*    execvp(prog_args[0], prog_args);*/
-/*    printf("Unreachable");*/
-/*    break;*/
-/*  default:*/
-/*    free(full_path);*/
-/*    free(real_full_path);*/
-/*    wait(&p);*/
-/*  }*/
-/*}*/
 
 char *search_for_exec(char *exec_name) {
   char *full_path = (char *)malloc(PATH_MAX * sizeof(char));
@@ -131,16 +69,18 @@ char *search_for_exec(char *exec_name) {
     printf("Unable to get 'PATH' environment variable!\n");
     exit(EXIT_FAILURE);
   }
-  /*printf("paths received : %s\n", paths); //Debug line*/
-  curr_tok = strtok(paths, ":");
-  // Loop through every path in the 'PATH' env_var and
-  // search for 'exec_name' in the path. If found, print it
+  //printf("paths received : %s\n", paths); //Debug line
+  char * curr_path = strtok(paths, ":");
+  /*
+    Loop through every path in the 'PATH' env_var and
+    search for 'exec_name' in the path. If found, print it
+  */
   DIR *dirp;
-  while (curr_tok != NULL) {
-    /*printf("Currently looking at '%s'\n", curr_tok);*/ // Debug line
-    dirp = opendir(curr_tok);
+  while (curr_path != NULL) {
+    //printf("Currently looking at '%s'\n", curr_tok); // Debug line
+    dirp = opendir(curr_path);
     if (dirp == NULL) {
-      curr_tok = strtok(NULL, ":");
+      curr_path = strtok(NULL, ":");
       continue;
     }
     struct dirent *pDirent;
@@ -148,17 +88,17 @@ char *search_for_exec(char *exec_name) {
     while ((pDirent = readdir(dirp)) != NULL) {
       // Found matching file, now need to check if it's executable
       if (strcmp(exec_name, pDirent->d_name) == 0) {
-        sprintf(full_path, "%s/%s", curr_tok,
+        sprintf(full_path, "%s/%s", curr_path,
                 exec_name); // Construct full path name
         if ((access(full_path, X_OK)) == 0) {
-          /*printf("%s is executable!\n", full_path);*/ // Debug line
+          //printf("%s is executable!\n", full_path); // Debug line
           closedir(dirp);
           free(start_of_paths);
           return full_path;
         }
       }
     }
-    curr_tok = strtok(NULL, ":");
+    curr_path = strtok(NULL, ":");
   }
   free(full_path);
   free(start_of_paths);
@@ -213,12 +153,12 @@ void handle_cd_command(char *command) {
   setenv("PWD", command, 1);
 }
 
-void handle_cat_command() {
-  char temp[BUFF_LENGTH] = {0};
-  strcat(temp, "cat ");
-  while ((curr_tok = strtok(NULL, "")) != NULL) {
-    strcat(temp, curr_tok);
-  }
-  system(temp);
-  return;
-}
+/*void handle_cat_command() {*/
+/*  char temp[BUFF_LENGTH] = {0};*/
+/*  strcat(temp, "cat ");*/
+/*  while ((curr_tok = strtok(NULL, "")) != NULL) {*/
+/*    strcat(temp, curr_tok);*/
+/*  }*/
+/*  system(temp);*/
+/*  return;*/
+/*}*/

@@ -1,7 +1,6 @@
 #include "cc_shell.h"
 #include "arg_obj_def.h"
 #include "argparser.h"
-extern char * curr_tok;
 
 struct arg_obj * create_arg_obj() {
   struct arg_obj *ao = malloc(sizeof(struct arg_obj));
@@ -26,10 +25,10 @@ void expand_arg_obj(struct arg_obj *ao) {
 }
 
 void add_args(struct arg_obj *ao, char *input) {
-  char *tok;
+  char * tok;
   // 1. Call strtok on input
   tok = strtok(input, " ");
-  char *new_arg;
+  char * new_arg;
   // 2. Create loop that will continue to run as long as tok is not null AKA there's another
   //    token left
   while (tok != NULL) {
@@ -51,7 +50,7 @@ void add_args(struct arg_obj *ao, char *input) {
 
 void clear_args(struct arg_obj *ao) {
   for (size_t i = 0; i < ao->size; i++) {
-    ao->args[i] = NULL;
+    free(ao->args[i]);
   }
   ao->size = 0;
 }
