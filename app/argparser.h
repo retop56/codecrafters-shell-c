@@ -8,4 +8,4 @@ static char *get_normal_arg(struct arg_obj *ao);
 static char *get_single_quote_arg(struct arg_obj *ao);
 static char *get_double_quote_arg(struct arg_obj *ao);
 static char *skip_past_adjacent_quotes_and_combine(struct arg_obj *ao, char *first_arg, char type_of_quote); 
-/*static void handle_backslash_char(struct arg_obj *ao);*/
+static char handle_backslash_char(struct arg_obj *ao);
