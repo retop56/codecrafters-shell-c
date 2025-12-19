@@ -97,7 +97,7 @@ static char *get_normal_arg(struct arg_obj *ao) {
   while (*ao->curr_char != '\0' && *ao->curr_char != ' ' && *ao->curr_char != '\'' &&
          *ao->curr_char != '\"') {
     if (*ao->curr_char == '\\') {
-      curr_arg[count++] = handle_backslash_char(ao);
+      curr_arg[count++] = handle_backslash_char(ao, OUTSIDE_QUOTES);
     } else {
       curr_arg[count++] = *ao->curr_char++;
     }
@@ -115,10 +115,6 @@ static char *get_single_quote_arg(struct arg_obj *ao) {
   ao->curr_char++; // Skip past first single quote
   size_t count = 0;
   while (*ao->curr_char != '\0' && *ao->curr_char != '\'') {
-    /*if (*curr_char == '\\') {*/
-    /*  curr_char = handle_backslash_char(ao, curr_char);*/
-    /*  continue;*/
-    /*}*/
     curr_arg[count++] = *ao->curr_char++;
   }
   curr_arg[count] = '\0';
@@ -133,7 +129,7 @@ static char *get_single_quote_arg(struct arg_obj *ao) {
   return new_arg;
 }
 
-static char handle_backslash_char(struct arg_obj *ao) {
+static char handle_backslash_char(struct arg_obj *ao, BKSLSH_MODE bm) {
   if (*ao->curr_char != '\\') {
     fprintf(stderr, "How the fuck did you get here? %s Line %d\n", __FUNCTION__, __LINE__);
     exit(EXIT_FAILURE);
@@ -152,21 +148,13 @@ static char handle_backslash_char(struct arg_obj *ao) {
     case 'n':
       ao->curr_char++;
       return 'n';
+    case '\\':
+      ao->curr_char++;
+      return '\\';
     default:
       fprintf(stderr, "Failed switch block in %s\n", __FUNCTION__);
       exit(EXIT_FAILURE);
   }
-  /*if (strncmp(ao->curr_char, "\\ ", 2) == 0) {*/
-  /*  ao->curr_char += 2;*/
-  /*  return ' ';*/
-  /*} else if (strncmp(ao->curr_char, "\\\'", 2) == 0) {*/
-  /*  ao->curr_char += 2;*/
-  /*  return '\'';*/
-  /*} else if (strncmp(ao->curr_char, "\\\"", 2) == 0) {*/
-  /*  ao->curr_char += 2;*/
-  /*  return '\"';*/
-  /*}*/
-  /*return NULL;*/
 }
 
 static char *get_double_quote_arg(struct arg_obj *ao) {
