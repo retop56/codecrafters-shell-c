@@ -1,4 +1,4 @@
-#ifndef cc_shell
+#pragma once
 
 #include <dirent.h>
 #include <limits.h>
@@ -13,5 +13,5 @@
 
 #define BUFF_LENGTH 1000
 
-#endif // !cc_shell
+
 

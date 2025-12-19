@@ -1,88 +1,28 @@
 #include "cc_shell.h"
 #include "handle_commands.h"
+#include "arg_obj_def.h"
+#include "argparser.h"
 extern char * curr_tok;
 
 void handle_exit_command() { exit(0); }
 
-void handle_echo_command(char *args) {
-  char temp[BUFF_LENGTH] = {0};
-  char echo_result[BUFF_LENGTH] = {0};
-  if (args == NULL) {
-    printf("\n");
-    return;
+void handle_echo_command(struct arg_obj *ao) {
+  if (ao->args[1] != NULL) {
+    printf("%s", ao->args[1]);
   }
-  if (strncmp(args, "'", 1) == 0) {
-    curr_tok = strtok(&args[1], "'\r");
-    strcat(echo_result, curr_tok);
-    while ((curr_tok = strtok(NULL, "'\r")) != NULL) {
-      strcat(echo_result, curr_tok);
-    }
-    printf("%s\n", echo_result);
-    return;
+  for (size_t i = 2; i < ao->size; i++) {
+    printf(" %s", ao->args[i]);
   }
-  if (strncmp(args, "\"", 1) == 0) {
-    size_t echo_result_i = 0;
-    size_t args_len = strlen(args);
-    bool inside_quotes = true;
-    for (size_t args_i = 1; args_i < args_len; args_i++) {
-      if (args[args_i] == '\"') {
-        inside_quotes = !inside_quotes;
-        if (args_i + 1 >= args_len) { /* Reached end of args string*/
-          break;
-        }
-        if (args_i + 1 < args_len && args[args_i + 1] == ' ') {
-          while (args[args_i + 1] == ' ') {
-            args_i++;
-          }
-          echo_result[echo_result_i++] = ' ';
-        }
-      } else if (args[args_i] == '\\') {
-        if (args[args_i + 1] == '\\') {
-          echo_result[echo_result_i++] = '\\';
-          args_i++;
-        } else if (args[args_i + 1] == '$') {
-          echo_result[echo_result_i++] = '$';
-          args_i++;
-        } else if (args[args_i + 1] == '"') {
-          echo_result[echo_result_i++] = '"';
-          args_i++;
-        } else {
-          echo_result[echo_result_i++] = args[args_i];
-          continue;
-        }
-      } else {
-        echo_result[echo_result_i++] = args[args_i];
-      }
-    }
-    printf("%s\n", echo_result);
-    return;
-  }
-  size_t result_index = 0;
-  size_t args_length = strlen(args);
-  for (size_t j = 0; j < args_length; j++) {
-    if (args[j] == ' ') {
-      while (j + 1 < args_length && args[j + 1] == ' ') {
-        j++;
-      }
-      echo_result[result_index++] = ' ';
-      continue;
-    }
-    if (args[j] == '\\') {
-      continue;
-    }
-    echo_result[result_index++] = args[j];
-  }
-  printf("%s\n", echo_result);
+  printf("\n");
 }
 
-void handle_type_command() {
-  curr_tok = strtok(NULL, " ");
-  if (strcmp(curr_tok, "echo") == 0 || strcmp(curr_tok, "exit") == 0 ||
-      strcmp(curr_tok, "type") == 0 || strcmp(curr_tok, "pwd") == 0) {
-    printf("%s is a shell builtin\n", curr_tok);
+void handle_type_command(struct arg_obj *ao) {
+  if (strcmp(ao->args[1], "echo") == 0 || strcmp(ao->args[1], "exit") == 0 ||
+      strcmp(ao->args[1], "type") == 0 || strcmp(ao->args[1], "pwd") == 0) {
+    printf("%s is a shell builtin\n", ao->args[1]);
   } else {
     char *exec_name = (char *)malloc(256 * sizeof(char));
-    strcpy(exec_name, curr_tok);
+    strcpy(exec_name, ao->args[1]);
     char *full_path = search_for_exec(exec_name);
     if (full_path == NULL) {
       printf("%s: not found\n", exec_name);
@@ -90,68 +30,98 @@ void handle_type_command() {
       free(exec_name);
       return;
     }
-    /*Check permissions on file */
     printf("%s is %s\n", exec_name, full_path);
     free(full_path);
     free(exec_name);
   }
 }
 
-void handle_program_execution(char *input) {
-  char *prog_args[100];
-  size_t num_of_args = 0;
-  char *curr_arg = strtok(input, " ");
-  while (curr_arg != NULL) {
-    prog_args[num_of_args++] = strdup(curr_arg);
-    curr_arg = strtok(NULL, " ");
-  }
-  char *full_path = search_for_exec(prog_args[0]);
+void handle_program_execution(struct arg_obj * ao) {
+  char * full_path = search_for_exec(ao->args[0]);
   if (full_path == NULL) {
-    printf("%s: command not found\n", input);
+    printf("%s: command not found\n", ao->args[0]);
     return;
   }
-  /*printf("Program was passed %zu args (including program name).\n",*/
-         /*num_of_args);*/
-  /*fflush(stdout);*/
-  /*printf("Arg #0 (program name): %s\n", prog_args[0]);*/
-  /*fflush(stdout);*/
-  /*for (size_t i = 1; i < num_of_args; i++) {*/
-    /*printf("Arg #%zu: %s\n", i, prog_args[i]);*/
-    /*fflush(stdout);*/
+  /*printf("full_path: %s\n", full_path);*/
+  /*ao->args[0] = full_path;*/
+  /*// Calculate length of full_path w/ args (and null at the end)*/
+  /*size_t len_of_full_path = strlen(full_path);*/
+  /*for (size_t i = 1; i < ao->size; i++) {*/
+  /*  len_of_full_path += 1; // Add one for space between args*/
+  /*  len_of_full_path += strlen(ao->args[i]);*/
   /*}*/
-  // Calculate length of full_path w/ args (and null at the end)
-  size_t len_of_full_path = strlen(full_path);
-  for (size_t i = 1; i < num_of_args; i++) {
-    len_of_full_path += 1; // Add one for space in between args
-    len_of_full_path += strlen(prog_args[i]);
-  }
-  len_of_full_path += 1; // Add one at end for null;
-  char *real_full_path = (char *)malloc(len_of_full_path * sizeof(char));
-  real_full_path[0] = '\0';
-  strcat(real_full_path, full_path);
-  for (size_t i = 1; i < num_of_args; i++) {
-    strcat(real_full_path, " ");
-    strcat(real_full_path, prog_args[i]);
-  }
-  /*prog_args[0] = full_path;*/
-  prog_args[num_of_args] = NULL;
-  pid_t p;
-  /*fflush(stdout);*/
-  p = fork();
+  /*len_of_full_path += 1; // Add one at end for null*/
+  /*char * real_full_path = (char *)malloc(len_of_full_path * sizeof(char));*/
+  /*real_full_path[0] = '\0';*/
+  /*strcat(real_full_path, full_path);*/
+  /*for(size_t i = 1; i < ao->size; i++) {*/
+  /*  strcat(real_full_path, " ");*/
+  /*  strcat(real_full_path, ao->args[i]);*/
+  /*}*/
+  pid_t p = fork();
   switch (p) {
-  case -1:
-    printf("Fork failed!\n");
-    exit(EXIT_FAILURE);
-  case 0:
-    execvp(prog_args[0], prog_args);
-    printf("Unreachable");
-    break;
-  default:
-    free(full_path);
-    free(real_full_path);
-    wait(&p);
+    case -1:
+      fprintf(stderr, "Fork failed!\n");
+      exit(EXIT_FAILURE); 
+    case 0:
+      // Write code for executing file
+      // Make sure last argument in list is NULL
+      ao->args[ao->size] = (char *)NULL;
+      execvp(full_path, ao->args);
+      break;
+    default:
+      free(full_path);
+      /*free(real_full_path);*/
+      wait(&p);
   }
 }
+
+/*void handle_program_execution(char *input) {*/
+/*  char *prog_args[100];*/
+/*  size_t num_of_args = 0;*/
+/*  char *curr_arg = strtok(input, " ");*/
+/*  while (curr_arg != NULL) {*/
+/*    prog_args[num_of_args++] = strdup(curr_arg);*/
+/*    curr_arg = strtok(NULL, " ");*/
+/*  }*/
+/*  char *full_path = search_for_exec(prog_args[0]);*/
+/*  if (full_path == NULL) {*/
+/*    printf("%s: command not found\n", input);*/
+/*    return;*/
+/*  }*/
+/*  // Calculate length of full_path w/ args (and null at the end)*/
+/*  size_t len_of_full_path = strlen(full_path);*/
+/*  for (size_t i = 1; i < num_of_args; i++) {*/
+/*    len_of_full_path += 1; // Add one for space in between args*/
+/*    len_of_full_path += strlen(prog_args[i]);*/
+/*  }*/
+/*  len_of_full_path += 1; // Add one at end for null;*/
+/*  char *real_full_path = (char *)malloc(len_of_full_path * sizeof(char));*/
+/*  real_full_path[0] = '\0';*/
+/*  strcat(real_full_path, full_path);*/
+/*  for (size_t i = 1; i < num_of_args; i++) {*/
+/*    strcat(real_full_path, " ");*/
+/*    strcat(real_full_path, prog_args[i]);*/
+/*  }*/
+/*  /*prog_args[0] = full_path;*/
+/*  prog_args[num_of_args] = NULL;*/
+/*  pid_t p;*/
+/*  /*fflush(stdout);*/
+/*  p = fork();*/
+/*  switch (p) {*/
+/*  case -1:*/
+/*    printf("Fork failed!\n");*/
+/*    exit(EXIT_FAILURE);*/
+/*  case 0:*/
+/*    execvp(prog_args[0], prog_args);*/
+/*    printf("Unreachable");*/
+/*    break;*/
+/*  default:*/
+/*    free(full_path);*/
+/*    free(real_full_path);*/
+/*    wait(&p);*/
+/*  }*/
+/*}*/
 
 char *search_for_exec(char *exec_name) {
   char *full_path = (char *)malloc(PATH_MAX * sizeof(char));

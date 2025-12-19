@@ -1,8 +1,9 @@
 #include "cc_shell.h"
-#include "handle_commands.h"
+#include "arg_obj_def.h"
+#include "argparser.h"
 extern char * curr_tok;
 
-struct arg_obj create_arg_obj() {
+struct arg_obj * create_arg_obj() {
   struct arg_obj *ao = malloc(sizeof(struct arg_obj));
   ao->size = 0;
   ao-> limit = 10;
@@ -12,23 +13,39 @@ struct arg_obj create_arg_obj() {
     exit(EXIT_FAILURE);
   } 
   ao->args = initial_args;
-  return *ao;
+  return ao;
 };
 
-void add_args(struct arg_obj *ao) {
-  size_t ct_len = strlen(curr_tok);
-  char *arg = (char*) malloc((sizeof(char) * ct_len) + 1);
-  strcat(arg, curr_tok);
-  if ((ao->size + 1) < ao->limit) {
-    ao->args[ao->size++] = arg;
-  } else {
-    ao->limit = ao->limit * 2;
-    char ** new_args = realloc(ao->args, ao->limit * 2);
-    if (new_args == NULL) {
-      fprintf(stderr, "Failed to rellocate arg_obj args size!");
+void expand_arg_obj(struct arg_obj *ao) {
+  ao->limit = ao->limit * 2;
+  char ** new_args = realloc(ao->args, ao->limit * 2);
+  if (new_args == NULL) {
+    fprintf(stderr, "Failed to rellocate arg_obj args size!");
+    exit(EXIT_FAILURE);
+  }
+}
+
+void add_args(struct arg_obj *ao, char *input) {
+  char *tok;
+  // 1. Call strtok on input
+  tok = strtok(input, " ");
+  char *new_arg;
+  // 2. Create loop that will continue to run as long as tok is not null AKA there's another
+  //    token left
+  while (tok != NULL) {
+    // 3. If it's successful, first check if there's enough space for this argument.
+    //    If there isn't, expand arg_obj first
+    if ((ao->size + 1) >= ao->limit) {
+      expand_arg_obj(ao);
+    }
+    new_arg = strdup(tok);
+    if (new_arg == NULL) {
+      fprintf(stderr, "Failed to duplicate token before adding to arg_obj!");
       exit(EXIT_FAILURE);
     }
-    ao->args[ao->size++] = arg; 
+    // 4. Add new_arg to arg_obj array
+    ao->args[ao->size++] = new_arg;
+    tok = strtok(NULL, " "); // Get next token
   }
 }
 
