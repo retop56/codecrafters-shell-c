@@ -17,6 +17,7 @@ int main() {
     int len_of_input = strlen(input);
     input[len_of_input - 1] = '\0';
     ao->input = (char *)&input;
+    ao->curr_char = (char *)&input;
     add_args(ao);
     if (strncmp(ao->args[0], "exit", 4) == 0) {
       handle_exit_command();

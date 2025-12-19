@@ -3,7 +3,8 @@
 #include <stddef.h>
 struct arg_obj {
   size_t size;
-  size_t limit;
+  size_t capacity;
   char **args;
   char * input;
+  char * curr_char;
 };
