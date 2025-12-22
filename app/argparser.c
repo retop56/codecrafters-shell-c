@@ -18,6 +18,7 @@ struct arg_obj *create_arg_obj() {
   }
   ao->args = initial_args;
   ao->input = NULL;
+  ao->redirect_to_stdout = false;
   return ao;
 };
 
@@ -43,7 +44,8 @@ void add_args(struct arg_obj *ao) {
     if (strncmp(ao->curr_char, "\'", 1) == 0) {
       received_arg = get_single_quote_arg(ao);
       if (strncmp(ao->curr_char, "\'", 1) == 0) {
-        received_arg = skip_past_adjacent_quotes_and_combine(ao, received_arg, '\'');
+        received_arg =
+            skip_past_adjacent_quotes_and_combine(ao, received_arg, '\'');
       }
       while (*ao->curr_char == ' ') {
         ao->curr_char++;
@@ -52,7 +54,8 @@ void add_args(struct arg_obj *ao) {
     } else if (strncmp(ao->curr_char, "\"", 1) == 0) {
       received_arg = get_double_quote_arg(ao);
       if (strncmp(ao->curr_char, "\"", 1) == 0) {
-        received_arg = skip_past_adjacent_quotes_and_combine(ao, received_arg, '\"');
+        received_arg =
+            skip_past_adjacent_quotes_and_combine(ao, received_arg, '\"');
       }
       while (*ao->curr_char == ' ') {
         ao->curr_char++;
@@ -62,20 +65,27 @@ void add_args(struct arg_obj *ao) {
       received_arg = get_normal_arg(ao);
       if (strncmp(ao->curr_char, "\'\'", 2) == 0) {
         ao->curr_char++;
-        received_arg = skip_past_adjacent_quotes_and_combine(ao, received_arg, '\'');
+        received_arg =
+            skip_past_adjacent_quotes_and_combine(ao, received_arg, '\'');
       } else if (strncmp(ao->curr_char, "\"\"", 2) == 0) {
         ao->curr_char++;
-        received_arg = skip_past_adjacent_quotes_and_combine(ao, received_arg, '\"');
+        received_arg =
+            skip_past_adjacent_quotes_and_combine(ao, received_arg, '\"');
       }
       while (*ao->curr_char == ' ') {
         ao->curr_char++;
+      }
+      if (strncmp(received_arg, ">", 1) == 0) {
+        ao->redirect_to_stdout = true;
       }
       ao->args[ao->size++] = received_arg;
     }
   }
 }
 
-static char *skip_past_adjacent_quotes_and_combine(struct arg_obj *ao, char *first_arg, char type_of_quote) {
+static char *skip_past_adjacent_quotes_and_combine(struct arg_obj *ao,
+                                                   char *first_arg,
+                                                   char type_of_quote) {
   if (type_of_quote == '\"') {
     char *second_arg = get_double_quote_arg(ao);
     size_t combined_size = strlen(first_arg) + strlen(second_arg) + 1;
@@ -94,8 +104,8 @@ static char *skip_past_adjacent_quotes_and_combine(struct arg_obj *ao, char *fir
 
 static char *get_normal_arg(struct arg_obj *ao) {
   size_t count = 0;
-  while (*ao->curr_char != '\0' && *ao->curr_char != ' ' && *ao->curr_char != '\'' &&
-         *ao->curr_char != '\"') {
+  while (*ao->curr_char != '\0' && *ao->curr_char != ' ' &&
+         *ao->curr_char != '\'' && *ao->curr_char != '\"') {
     if (*ao->curr_char == '\\') {
       curr_arg[count++] = handle_backslash_char(ao, OUTSIDE_QUOTES);
     } else {
@@ -131,11 +141,14 @@ static char *get_single_quote_arg(struct arg_obj *ao) {
 
 static char handle_backslash_char(struct arg_obj *ao, BKSLSH_MODE bm) {
   if (*ao->curr_char != '\\') {
-    fprintf(stderr, "How the fuck did you get here? %s Line %d\n", __FUNCTION__, __LINE__);
+    fprintf(stderr, "How the fuck did you get here? %s Line %d\n", __FUNCTION__,
+            __LINE__);
     exit(EXIT_FAILURE);
   }
-  ao->curr_char++;
-  switch (*ao->curr_char) {
+  switch (bm) {
+  case OUTSIDE_QUOTES:
+    ao->curr_char++;
+    switch (*ao->curr_char) {
     case ' ':
       ao->curr_char++;
       return ' ';
@@ -154,6 +167,22 @@ static char handle_backslash_char(struct arg_obj *ao, BKSLSH_MODE bm) {
     default:
       fprintf(stderr, "Failed switch block in %s\n", __FUNCTION__);
       exit(EXIT_FAILURE);
+    }
+  case INSIDE_DOUBLE_QUOTES:
+    ao->curr_char++;
+    switch (*ao->curr_char) {
+    case '\\':
+      ao->curr_char++;
+      return '\\';
+    case '\"':
+      ao->curr_char++;
+      return '\"';
+    default:
+      return '\\';
+    }
+  default:
+    fprintf(stderr, "Fuck you. %s Line %d", __FUNCTION__, __LINE__);
+    exit(EXIT_FAILURE);
   }
 }
 
@@ -161,12 +190,30 @@ static char *get_double_quote_arg(struct arg_obj *ao) {
   ao->curr_char++; // Skip past first double quote
   size_t count = 0;
   while (*ao->curr_char != '\0' && *ao->curr_char != '\"') {
-    curr_arg[count++] = *ao->curr_char++;
+    if (*ao->curr_char == '\\') {
+      curr_arg[count++] = handle_backslash_char(ao, INSIDE_DOUBLE_QUOTES);
+    } else {
+      curr_arg[count++] = *ao->curr_char++;
+    }
   }
-  curr_arg[count] = '\0';
   if (*ao->curr_char == '\"') {
     ao->curr_char++;
   }
+  /* 
+   * running the while loop again to collect reset of argument that's adjacent to end of 
+   * quote. Example below    |
+   *                         |
+   *                         V
+   * echo "test\"insidequotes"example\"
+   * */
+  while (*ao->curr_char != '\"' && *ao->curr_char != ' ' && *ao->curr_char != '\0') {
+    if (*ao->curr_char == '\\') {
+      curr_arg[count++] = handle_backslash_char(ao, OUTSIDE_QUOTES);
+    } else {
+      curr_arg[count++] = *ao->curr_char++;
+    }
+  }
+  curr_arg[count] = '\0';
   char *new_arg = strndup(curr_arg, count);
   if (new_arg == NULL) {
     fprintf(stderr, "strndup failed at line %d in %s\n", (__LINE__)-2,

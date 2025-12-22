@@ -28,7 +28,7 @@ int main() {
     } else if (strncmp(ao->args[0], "pwd", 3) == 0) {
       handle_pwd_command();
     } else if (strncmp(ao->args[0], "cd", 2) == 0) {
-      handle_cd_command(ao->args[1]);
+      handle_cd_command(ao, ao->args[1]);
     } else {
       handle_program_execution(ao);
     }

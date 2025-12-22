@@ -2,6 +2,7 @@
 #include "handle_commands.h"
 #include "arg_obj_def.h"
 #include "argparser.h"
+#include <stdlib.h>
 
 void handle_exit_command() { exit(0); }
 
@@ -115,42 +116,97 @@ void handle_pwd_command() {
   printf("%s\n", pwd_str);
 }
 
-void handle_cd_command(char *command) {
-  if (*command == '\0') {
+/*void handle_cd_command(struct arg_obj *ao) {*/
+/*  if (strncmp(ao->args[1], "./", 2) == 0) {*/
+/*    char *curr_pwd = getenv("PWD");*/
+/*    size_t new_path_size = strlen(curr_pwd) + strlen(ao->args[1]);*/
+/*    char *new_path = (char *) malloc(new_path_size);*/
+/*    new_path[0] = '\0';*/
+/*    strcat(new_path, curr_pwd);*/
+/*    strcat(new_path, ao->args[1] + 1);*/
+/*    if (chdir(new_path) != 0) {*/
+/*      printf("cd: %s: No such file or directory\n", new_path);*/
+/*    }*/
+/*    setenv("PWD", new_path, 1);*/
+/*  } else if(strncmp(ao->args[1], "../", 3) == 0) {*/
+/*    char *arg_ptr = ao->args[1] + 3;*/
+/*    size_t num_of_levels_up = 1;*/
+/*    while (*arg_ptr != '\0' && strncmp(arg_ptr, "../", 3) == 0) {*/
+/*      arg_ptr += 3;*/
+/*      num_of_levels_up++;*/
+/*    }*/
+/*    char *curr_pwd = getenv("PWD");*/
+/*    char *pwd_ptr = curr_pwd + (strlen(curr_pwd) - 1);*/
+/*    for (;num_of_levels_up > 0; num_of_levels_up--) {*/
+/*      while (*pwd_ptr != '/') {*/
+/*        pwd_ptr--;*/
+/*      }*/
+/*    }*/
+/*    printf("curr arg_ptr: %s\n", arg_ptr); */
+/*    exit(EXIT_FAILURE);*/
+/*    /*char *curr_pwd = getenv("PWD");*/
+/**/
+/*  } else if (chdir(ao->args[1]) != 0) {*/
+/*    printf("cd: %s: No such file or directory\n", ao->args[1]);*/
+/*  } else {*/
+/*    setenv("PWD", ao->args[1], 1);*/
+/*  }*/
+/*}*/
+
+void handle_cd_command(struct arg_obj *ao, char *command) {
+  if (*ao->args[1] == '\0') {
     return;
-  } else if (strncmp(command, "./", 2) == 0) {
-    char *fixed_arg = strdup(&command[1]);
+  } else if (strncmp(ao->args[1], "./", 2) == 0) {
+    char *fixed_arg = strdup(ao->args[1] + 1);
     char *new_dir = (char *)calloc(1000, sizeof(char));
     strcat(new_dir, getenv("PWD"));
     strcat(new_dir, fixed_arg);
     if (chdir(new_dir) != 0) {
-      printf("cd: %s: No such file or directory\n", command);
+      printf("cd: %s: No such file or directory\n", ao->args[1]);
       return;
     }
     setenv("PWD", new_dir, 1);
     return;
-  } else if (strncmp(command, "../", 3) == 0) {
-    char *new_command = strdup(command + 3);
-    char *curr_pwd = getenv("PWD");
-    int i = strlen(curr_pwd);
-    for (; i > 0; i--) {
-      if (curr_pwd[i] == '/') {
-        break;
+  } else if (strncmp(ao->args[1], "../", 3) == 0) {
+    size_t num_of_levels = 1;
+    char *arg_ptr = ao->args[1] + 3;
+    while (*arg_ptr != '\0' && strncmp(arg_ptr, "../", 3) == 0) {
+      arg_ptr += 3;
+      num_of_levels++;
+    }
+    char *curr_pwd = strdup(getenv("PWD"));
+    char *pwd_ptr = curr_pwd + (strlen(curr_pwd) - 1);
+    /*printf("num_of_levels: %zu\n", num_of_levels);*/
+    for (; num_of_levels > 0; num_of_levels--) {
+      pwd_ptr--;
+      while (*pwd_ptr != '/') {
+        pwd_ptr--;
       }
     }
-    char *new_pwd = strndup(curr_pwd, i);
-    setenv("PWD", new_pwd, 1);
-    handle_cd_command(new_command);
+    size_t length_of_new_pwd = pwd_ptr - curr_pwd;
+    /*printf("length_of_new_pwd: %zu\n", length_of_new_pwd);*/
+    /*printf("curr_pwd: %s\n", curr_pwd);*/
+   
+    curr_pwd[length_of_new_pwd] = '\0';
+    /*printf("modified curr_pwd: %s\n", curr_pwd);*/
+    setenv("PWD", curr_pwd, 1);
+    /*while (curr_pwd != pwd_ptr) {*/
+      /*printf("%c", *curr_pwd++);*/
+    /*}*/
+    /*printf("\n");*/
+    /*char *new_pwd = strndup(curr_pwd, i);*/
+    /*setenv("PWD", new_pwd, 1);*/
+    /*handle_cd_command(ao, new_command);*/
     return;
-  } else if (strncmp(command, "~", 1) == 0) {
+  } else if (strncmp(ao->args[1], "~", 1) == 0) {
     char *home_dir = getenv("HOME");
     setenv("PWD", home_dir, 1);
     return;
-  } else if (chdir(command) != 0) {
-    printf("cd: %s: No such file or directory\n", command);
+  } else if (chdir(ao->args[1]) != 0) {
+    printf("cd: %s: No such file or directory\n", ao->args[1]);
     return;
   }
-  setenv("PWD", command, 1);
+  setenv("PWD", ao->args[1], 1);
 }
 
 /*void handle_cat_command() {*/
