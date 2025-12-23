@@ -9,5 +9,5 @@ struct arg_obj {
   char * input;
   char * curr_char;
 
-  enum redir_t {STD_OUT, STD_ERR, INITIAL_VAL} redir_type;
+  enum redir_t {STD_OUT, STD_ERR, APPEND_STD_OUT, INITIAL_VAL} redir_type;
 };
