@@ -24,7 +24,7 @@ struct arg_obj *create_arg_obj() {
   }
   ao->args = initial_args;
   ao->input = NULL;
-  ao->redirect_to_stdout = false;
+  ao->redir_type = INITIAL_VAL;
   return ao;
 };
 
@@ -82,10 +82,10 @@ void add_args(struct arg_obj *ao) {
         ao->curr_char++;
       }
       if (strncmp(received_arg, ">", 1) == 0) {
-        ao->redirect_to_stdout = true;
+        ao->redir_type = STD_OUT;
       }
       if (strncmp(received_arg, "1>", 1) == 0) {
-        ao->redirect_to_stdout = true;
+        ao->redir_type = STD_OUT;
       }
       ao->args[ao->size++] = received_arg;
     }
@@ -236,7 +236,7 @@ void clear_args(struct arg_obj *ao) {
     free(ao->args[i]);
   }
   ao->size = 0;
-  /*ao->input = NULL;*/
-  /*ao->curr_char = NULL;*/
-  ao->redirect_to_stdout = false;
+  ao->input = NULL;
+  ao->curr_char = NULL;
+  ao->redir_type = INITIAL_VAL;
 }

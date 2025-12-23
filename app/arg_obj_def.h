@@ -8,5 +8,6 @@ struct arg_obj {
   char **args;
   char * input;
   char * curr_char;
-  bool redirect_to_stdout;
+
+  enum redir_t {STD_OUT, STD_ERR, INITIAL_VAL} redir_type;
 };

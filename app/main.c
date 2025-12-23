@@ -19,7 +19,7 @@ int main() {
     ao->input = (char *)&input;
     ao->curr_char = (char *)&input;
     add_args(ao);
-    if (ao->redirect_to_stdout == true) {
+    if (ao->redir_type == STD_OUT) {
       handle_program_execution_w_redirect(ao);
     } else if (strncmp(ao->args[0], "exit", 4) == 0) {
       handle_exit_command();
