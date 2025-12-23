@@ -65,7 +65,7 @@ void handle_program_execution(struct arg_obj *ao) {
   }
 }
 
-void handle_program_execution_w_redirect(struct arg_obj *ao) {
+void handle_program_exec_w_redirect_or_append(struct arg_obj *ao) {
   size_t i = 0;
   size_t size_of_full_command = 0;
   switch (ao->redir_type) {
@@ -86,6 +86,15 @@ void handle_program_execution_w_redirect(struct arg_obj *ao) {
       size_of_full_command += strlen(ao->args[i]);
     }
     break;
+  case APPEND_STD_OUT:
+    for (; i < ao->size; i++) {
+      if (strncmp(ao->args[i], ">>", 2) == 0 ||
+          strncmp(ao->args[i], "1>>", 3) == 0) {
+        break;
+      }
+      size_of_full_command += strlen(ao->args[i]);
+    }
+    break;
   case INITIAL_VAL:
     fprintf(stderr, "ao->redir_type is INITIAL_VAL for some reason \n");
     break;
@@ -93,17 +102,22 @@ void handle_program_execution_w_redirect(struct arg_obj *ao) {
 
   size_of_full_command += i; // For spaces between each command;
   if (i == ao->size) {
+    char *err_line;
     switch (ao->redir_type) {
     case STD_OUT:
-      fprintf(stderr, "Unable to find '>' or '1>' operator in ao->args!\n");
+      err_line = "Unable to find '>' or '1>' operator in ao->args!\n";
       break;
     case STD_ERR:
-      fprintf(stderr, "Unable to find '>' or '2>' operator in ao->args!\n");
+      err_line = "Unable to find '>' or '2>' operator in ao->args!\n";
+      break;
+    case APPEND_STD_OUT:
+      err_line = "Unable to find '>>' or '1>>' operator in ao->args!\n";
       break;
     case INITIAL_VAL:
-      fprintf(stderr, "ao->redir_type is INITIAL_VAL for some reason \n");
+      err_line = "ao->redir_type is INITIAL_VAL for some reason \n";
       break;
     }
+    fprintf(stderr, "%s\n", err_line);
     exit(EXIT_FAILURE);
   }
   char *full_command = (char *)malloc(sizeof(char) * size_of_full_command + 1);
@@ -114,14 +128,19 @@ void handle_program_execution_w_redirect(struct arg_obj *ao) {
     strcat(full_command, ao->args[x]);
   }
   char output_buff[BUFF_LENGTH] = {0};
-  if (ao->redir_type == STD_OUT) {
+  if (ao->redir_type == STD_OUT || ao->redir_type == APPEND_STD_OUT) {
     FILE *cmd_f_ptr = popen(full_command, "r");
     if (cmd_f_ptr == NULL) {
       fprintf(stderr, "popen failed on line %d in %s\n", __LINE__,
               __FUNCTION__);
       exit(EXIT_FAILURE);
     }
-    FILE *output_file = fopen(ao->args[i + 1], "w");
+    FILE *output_file;
+    if (ao->redir_type == STD_OUT) {
+      output_file = fopen(ao->args[i + 1], "w");
+    } else {
+      output_file = fopen(ao->args[i + 1], "a");
+    }
     if (output_file == NULL) {
       fprintf(stderr, "fopen failed on line %d in %s\n", __LINE__,
               __FUNCTION__);
@@ -135,9 +154,8 @@ void handle_program_execution_w_redirect(struct arg_obj *ao) {
     fclose(output_file);
     free(full_command);
     return;
-  }
-  if (ao->redir_type == STD_ERR) {
-    int fd = open(ao->args[i + 1], O_CREAT|O_WRONLY);
+  } else if (ao->redir_type == STD_ERR) {
+    int fd = open(ao->args[i + 1], O_CREAT | O_WRONLY);
     if (fd == -1) {
       perror("open");
       exit(EXIT_FAILURE);
@@ -158,7 +176,7 @@ void handle_program_execution_w_redirect(struct arg_obj *ao) {
     }
     free(full_command);
     return;
-  }
+  }   
   printf("You shouldn't be here (Line %d)\n", __LINE__);
 }
 

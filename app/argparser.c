@@ -83,7 +83,10 @@ void add_args(struct arg_obj *ao) {
       while (*ao->curr_char == ' ') {
         ao->curr_char++;
       }
-      if (strncmp(received_arg, ">", 1) == 0 ||
+      if (strncmp(received_arg, ">>", 2) == 0 ||
+          strncmp(received_arg, "1>>", 3) == 0) {
+        ao->redir_type = APPEND_STD_OUT;
+      } else if (strncmp(received_arg, ">", 1) == 0 ||
           strncmp(received_arg, "1>", 2) == 0) {
         ao->redir_type = STD_OUT;
       } else if (strncmp(received_arg, "2>", 2) == 0) {

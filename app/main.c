@@ -22,7 +22,7 @@ int main() {
     if (ao->redir_type == STD_OUT ||
         ao->redir_type == STD_ERR ||
         ao->redir_type == APPEND_STD_OUT) {
-      handle_program_execution_w_redirect(ao);
+      handle_program_exec_w_redirect_or_append(ao);
     } else if (strncmp(ao->args[0], "exit", 4) == 0) {
       handle_exit_command();
     } else if (strncmp(ao->args[0], "echo", 4) == 0) {
