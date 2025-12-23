@@ -9,4 +9,4 @@
 # Exit early if any commands fail
 set -e
 
-gcc app/*.c -lreadline -o /tmp/shell-target
+gcc app/*.c -lreadline -L/usr/local/lib -I/usr/local/include -o /tmp/shell-target

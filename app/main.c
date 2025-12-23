@@ -2,8 +2,8 @@
 #include "argparser.h"
 #include "cc_shell.h"
 #include "handle_commands.h"
-#include <readline/readline.h>
-#include <readline/history.h>
+#include "/usr/include/readline/readline.h"
+#include "/usr/include/readline/history.h"
 /*char input[BUFF_LENGTH];*/
 struct arg_obj *ao;
 
