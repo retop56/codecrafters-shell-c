@@ -19,7 +19,9 @@ int main() {
     ao->input = (char *)&input;
     ao->curr_char = (char *)&input;
     add_args(ao);
-    if (strncmp(ao->args[0], "exit", 4) == 0) {
+    if (ao->redirect_to_stdout == true) {
+      handle_program_execution_w_redirect(ao);
+    } else if (strncmp(ao->args[0], "exit", 4) == 0) {
       handle_exit_command();
     } else if (strncmp(ao->args[0], "echo", 4) == 0) {
       handle_echo_command(ao);
@@ -28,12 +30,10 @@ int main() {
     } else if (strncmp(ao->args[0], "pwd", 3) == 0) {
       handle_pwd_command();
     } else if (strncmp(ao->args[0], "cd", 2) == 0) {
-      handle_cd_command(ao, ao->args[1]);
-    } else if (ao->redirect_to_stdout == false) {
-      handle_program_execution(ao);
+      handle_cd_command(ao);
     } else {
-      handle_program_execution_w_redirect(ao);
-    }
+      handle_program_execution(ao);
+    } 
     clear_args(ao);
   }
   free(ao);

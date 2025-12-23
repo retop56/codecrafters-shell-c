@@ -4,6 +4,8 @@
 #include "cc_shell.h"
 #include <stdlib.h>
 
+static char *search_for_exec(char *exec_name);
+
 void handle_exit_command() { exit(0); }
 
 void handle_echo_command(struct arg_obj *ao) {
@@ -62,9 +64,6 @@ void handle_program_execution(struct arg_obj *ao) {
 }
 
 void handle_program_execution_w_redirect(struct arg_obj *ao) {
-  char *full_path = search_for_exec(ao->args[0]);
-
-
   size_t i = 0;
   size_t size_of_full_command = 0;
   for (; i < ao->size; i++) {
@@ -73,12 +72,8 @@ void handle_program_execution_w_redirect(struct arg_obj *ao) {
       break;
     }
     size_of_full_command += strlen(ao->args[i]);
-    /*printf("ao->arg[%zu]: %s\n", i, ao->args[i]);*/
-    /*printf("size_of_full_command: %zu\n", size_of_full_command);*/
   }
   size_of_full_command += i; // For spaces between each command;
-  /*printf("i: %zu\n", i);*/
-  /*printf("ao->size: %zu\n", ao->size);*/
   if (i == ao->size) {
     fprintf(stderr, "Unable to find '>' or '1>' operator in ao->args!\n");
     exit(EXIT_FAILURE);
@@ -90,7 +85,6 @@ void handle_program_execution_w_redirect(struct arg_obj *ao) {
     strcat(full_command, " ");
     strcat(full_command, ao->args[x]);
   }
-  /*printf("full_command: %s\n", full_command);*/
   char output_buff[BUFF_LENGTH] = {0};
   FILE *cmd_f_ptr = popen(full_command, "r");
   if (cmd_f_ptr == NULL) {
@@ -103,55 +97,13 @@ void handle_program_execution_w_redirect(struct arg_obj *ao) {
     exit(EXIT_FAILURE);
   }
 
-  /*printf("output_buff contents:\n");*/
   while (fgets(output_buff, BUFF_LENGTH, cmd_f_ptr) != NULL) {
-    /*fputs(output_buff, output_file);*/
-    /*printf("%s", output_buff);*/
     fprintf(output_file, "%s", output_buff);
   }
   pclose(cmd_f_ptr);
   fclose(output_file);
-  /*printf("Finished %s\n", __FUNCTION__);*/
 }
 
-/*void handle_program_execution_w_redirect(struct arg_obj *ao) {*/
-/*  char *new_args[BUFF_LENGTH];*/
-/*  char *full_path = search_for_exec(ao->args[0]);*/
-/*  if (full_path == NULL) {*/
-/*    printf("%s: command not found\n", ao->args[0]);*/
-/*    return;*/
-/*  }*/
-/*  size_t i = 0;*/
-/*  for(; i < ao->size; i++) {*/
-/*    if (strncmp(ao->args[i], ">", 1) == 0) {*/
-/*      break;*/
-/*    }*/
-/*    new_args[i] = ao->args[i];*/
-/*  }*/
-/*  if(i == ao->size) {*/
-/*    fprintf(stderr, "Unable to find '>' operator in ao->args!\n");*/
-/*    exit(EXIT_FAILURE);*/
-/*  }*/
-/*  pid_t p = fork();*/
-/*  switch (p) {*/
-/*    case -1:*/
-/*      fprintf(stderr, "Fork failed!\n");*/
-/*      exit(EXIT_FAILURE);*/
-/*    case 0:*/
-/*    /**/
-/*     * Make sure last argument in list is NULL to satisfy requirements*/
-/*     * of execvp*/
-/*     */
-/*      new_args[i] = NULL;  */
-/*      execvp(full_path, new_args);*/
-/*      break; */
-/*    default:*/
-/*      free(full_path);*/
-/*      wait(&p);*/
-/*  }*/
-/*  /*printf("Found '>' in ao->args (index: %zu)\n", i);*/
-/*  /*exit(EXIT_SUCCESS);*/
-/*}*/
 
 char *search_for_exec(char *exec_name) {
   char *full_path = (char *)malloc(PATH_MAX * sizeof(char));
@@ -203,7 +155,7 @@ void handle_pwd_command() {
   printf("%s\n", pwd_str);
 }
 
-void handle_cd_command(struct arg_obj *ao, char *command) {
+void handle_cd_command(struct arg_obj *ao) {
   if (*ao->args[1] == '\0') {
     return;
   } else if (strncmp(ao->args[1], "./", 2) == 0) {

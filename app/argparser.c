@@ -4,6 +4,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+static char *get_normal_arg(struct arg_obj *ao);
+static char *get_single_quote_arg(struct arg_obj *ao);
+static char *get_double_quote_arg(struct arg_obj *ao);
+static char *skip_past_adjacent_quotes_and_combine(struct arg_obj *ao, char *first_arg, char type_of_quote); 
+static char handle_backslash_char(struct arg_obj *ao, BKSLSH_MODE bm);
+
 int times_double_quotes_called = 0;
 char curr_arg[BUFF_LENGTH];
 
