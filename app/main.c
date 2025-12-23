@@ -19,9 +19,10 @@ int main() {
     ao->input = (char *)&input;
     ao->curr_char = (char *)&input;
     add_args(ao);
-    if (ao->redir_type == STD_OUT ||
-        ao->redir_type == STD_ERR ||
-        ao->redir_type == APPEND_STD_OUT) {
+    /*if (ao->redir_type == STD_OUT ||*/
+    /*    ao->redir_type == STD_ERR ||*/
+    /*    ao->redir_type == APPEND_STD_OUT) {*/
+    if (ao->redir_type != INITIAL_VAL) {
       handle_program_exec_w_redirect_or_append(ao);
     } else if (strncmp(ao->args[0], "exit", 4) == 0) {
       handle_exit_command();
