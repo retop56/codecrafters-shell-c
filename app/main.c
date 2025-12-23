@@ -2,23 +2,31 @@
 #include "argparser.h"
 #include "cc_shell.h"
 #include "handle_commands.h"
-char input[BUFF_LENGTH];
+#include <readline/readline.h>
+#include <readline/history.h>
+/*char input[BUFF_LENGTH];*/
 struct arg_obj *ao;
 
 int main() {
+  rl_bind_key('\t', rl_complete);
   ao = create_arg_obj();
   while (true) {
-    printf("$ ");
-    fflush(NULL);
+    /*printf("$ ");*/
+    /*fflush(NULL);*/
     // Wait for user input
-    if (fgets(input, BUFF_LENGTH, stdin) == NULL) {
-      continue;
-    }
+    
+    /*if (fgets(input, BUFF_LENGTH, stdin) == NULL) {*/
+      /*continue;*/
+    /*}*/
+    char *input = readline("$ ");
+    if (!input) break;
     // Replace \n at end of string with null
     int len_of_input = strlen(input);
     input[len_of_input - 1] = '\0';
-    ao->input = (char *)&input;
-    ao->curr_char = (char *)&input;
+    /*ao->input = (char *)&input;*/
+    ao->input = input;
+    /*ao->curr_char = (char *)&input;*/
+    ao->curr_char = input;
     add_args();
     if (ao->redir_type != INITIAL_VAL) {
       handle_program_exec_w_redirect_or_append();
