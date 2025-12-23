@@ -29,8 +29,10 @@ int main() {
       handle_pwd_command();
     } else if (strncmp(ao->args[0], "cd", 2) == 0) {
       handle_cd_command(ao, ao->args[1]);
-    } else {
+    } else if (ao->redirect_to_stdout == false) {
       handle_program_execution(ao);
+    } else {
+      handle_program_execution_w_redirect(ao);
     }
     clear_args(ao);
   }

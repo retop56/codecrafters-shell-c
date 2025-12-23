@@ -78,6 +78,9 @@ void add_args(struct arg_obj *ao) {
       if (strncmp(received_arg, ">", 1) == 0) {
         ao->redirect_to_stdout = true;
       }
+      if (strncmp(received_arg, "1>", 1) == 0) {
+        ao->redirect_to_stdout = true;
+      }
       ao->args[ao->size++] = received_arg;
     }
   }
@@ -227,4 +230,7 @@ void clear_args(struct arg_obj *ao) {
     free(ao->args[i]);
   }
   ao->size = 0;
+  /*ao->input = NULL;*/
+  /*ao->curr_char = NULL;*/
+  ao->redirect_to_stdout = false;
 }

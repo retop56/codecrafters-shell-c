@@ -7,4 +7,4 @@ void handle_program_execution(struct arg_obj *prog);
 static char *search_for_exec(char *exec_name);
 void handle_pwd_command();
 void handle_cd_command(struct arg_obj *ao, char *command);
-void handle_cat_command();
+void handle_program_execution_w_redirect(struct arg_obj *prog);
