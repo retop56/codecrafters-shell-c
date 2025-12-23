@@ -11,6 +11,7 @@ static char *skip_past_adjacent_quotes_and_combine(struct arg_obj *ao,
                                                    char *first_arg,
                                                    char type_of_quote);
 static char handle_backslash_char(struct arg_obj *ao, BKSLSH_MODE bm);
+static void set_redir_type(struct arg_obj *ao, char *arg);
 
 int times_double_quotes_called = 0;
 char curr_arg[BUFF_LENGTH];
@@ -83,18 +84,24 @@ void add_args(struct arg_obj *ao) {
       while (*ao->curr_char == ' ') {
         ao->curr_char++;
       }
-      if (strncmp(received_arg, ">>", 2) == 0 ||
-          strncmp(received_arg, "1>>", 3) == 0) {
-        ao->redir_type = APPEND_STD_OUT;
-      } else if (strncmp(received_arg, ">", 1) == 0 ||
-          strncmp(received_arg, "1>", 2) == 0) {
-        ao->redir_type = STD_OUT;
-      } else if (strncmp(received_arg, "2>", 2) == 0) {
-        ao->redir_type = STD_ERR;
-      }
+      set_redir_type(ao, received_arg);
       ao->args[ao->size++] = received_arg;
     }
   }
+}
+
+static void set_redir_type(struct arg_obj *ao, char *arg) {
+      if (strncmp(arg, ">>", 2) == 0 ||
+          strncmp(arg, "1>>", 3) == 0) {
+        ao->redir_type = APPEND_STD_OUT;
+      } else if(strncmp(arg, "2>>", 3) == 0) {
+        ao->redir_type = APPEND_STD_ERR;
+      } else if (strncmp(arg, ">", 1) == 0 ||
+          strncmp(arg, "1>", 2) == 0) {
+        ao->redir_type = STD_OUT;
+      } else if (strncmp(arg, "2>", 2) == 0) {
+        ao->redir_type = STD_ERR;
+      }
 }
 
 static char *skip_past_adjacent_quotes_and_combine(struct arg_obj *ao,
