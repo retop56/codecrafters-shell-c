@@ -5,12 +5,13 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
+extern struct arg_obj *ao;
 
 static char *search_for_exec(char *exec_name);
 
 void handle_exit_command() { exit(0); }
 
-void handle_echo_command(struct arg_obj *ao) {
+void handle_echo_command() {
   if (ao->args[1] != NULL) {
     printf("%s", ao->args[1]);
   }
@@ -20,7 +21,7 @@ void handle_echo_command(struct arg_obj *ao) {
   printf("\n");
 }
 
-void handle_type_command(struct arg_obj *ao) {
+void handle_type_command() {
   if (strcmp(ao->args[1], "echo") == 0 || strcmp(ao->args[1], "exit") == 0 ||
       strcmp(ao->args[1], "type") == 0 || strcmp(ao->args[1], "pwd") == 0) {
     printf("%s is a shell builtin\n", ao->args[1]);
@@ -40,7 +41,7 @@ void handle_type_command(struct arg_obj *ao) {
   }
 }
 
-void handle_program_execution(struct arg_obj *ao) {
+void handle_program_execution() {
   char *full_path = search_for_exec(ao->args[0]);
   if (full_path == NULL) {
     printf("%s: command not found\n", ao->args[0]);
@@ -65,7 +66,7 @@ void handle_program_execution(struct arg_obj *ao) {
   }
 }
 
-void handle_program_exec_w_redirect_or_append(struct arg_obj *ao) {
+void handle_program_exec_w_redirect_or_append() {
   size_t i = 0;
   size_t size_of_full_command = 0;
   switch (ao->redir_type) {
@@ -95,6 +96,14 @@ void handle_program_exec_w_redirect_or_append(struct arg_obj *ao) {
       size_of_full_command += strlen(ao->args[i]);
     }
     break;
+  case APPEND_STD_ERR:
+    for (; i < ao->size; i++) {
+      if (strncmp(ao->args[i], "2>>", 3) == 0) {
+        break;
+      }
+      size_of_full_command += strlen(ao->args[i]);
+    }
+    break;
   case INITIAL_VAL:
     fprintf(stderr, "ao->redir_type is INITIAL_VAL for some reason \n");
     break;
@@ -113,6 +122,8 @@ void handle_program_exec_w_redirect_or_append(struct arg_obj *ao) {
     case APPEND_STD_OUT:
       err_line = "Unable to find '>>' or '1>>' operator in ao->args!\n";
       break;
+    case APPEND_STD_ERR:
+      err_line = "Unable to find '2>>' operator in ao->args!\n";
     case INITIAL_VAL:
       err_line = "ao->redir_type is INITIAL_VAL for some reason \n";
       break;
@@ -154,8 +165,13 @@ void handle_program_exec_w_redirect_or_append(struct arg_obj *ao) {
     fclose(output_file);
     free(full_command);
     return;
-  } else if (ao->redir_type == STD_ERR) {
-    int fd = open(ao->args[i + 1], O_CREAT | O_WRONLY);
+  } else if (ao->redir_type == STD_ERR || ao->redir_type == APPEND_STD_ERR) {
+    int fd;
+    if (ao->redir_type == STD_ERR) {
+      fd = open(ao->args[i + 1], O_CREAT | O_WRONLY);
+    } else {
+      fd = open(ao->args[i+ 1], O_CREAT | O_APPEND | O_WRONLY);
+    }
     if (fd == -1) {
       perror("open");
       exit(EXIT_FAILURE);
@@ -230,7 +246,7 @@ void handle_pwd_command() {
   printf("%s\n", pwd_str);
 }
 
-void handle_cd_command(struct arg_obj *ao) {
+void handle_cd_command() {
   if (*ao->args[1] == '\0') {
     return;
   } else if (strncmp(ao->args[1], "./", 2) == 0) {

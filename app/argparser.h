@@ -8,5 +8,5 @@ typedef enum Backslash_Mode{
 
 
 struct arg_obj *create_arg_obj();
-void add_args(struct arg_obj *ao);
-void clear_args(struct arg_obj *ao);
+void add_args();
+void clear_args();

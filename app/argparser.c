@@ -4,34 +4,35 @@
 #include <stdlib.h>
 #include <string.h>
 
-static char *get_normal_arg(struct arg_obj *ao);
-static char *get_single_quote_arg(struct arg_obj *ao);
-static char *get_double_quote_arg(struct arg_obj *ao);
-static char *skip_past_adjacent_quotes_and_combine(struct arg_obj *ao,
-                                                   char *first_arg,
+extern struct arg_obj *ao;
+
+static char *get_normal_arg();
+static char *get_single_quote_arg();
+static char *get_double_quote_arg();
+static char *skip_past_adjacent_quotes_and_combine(char *first_arg,
                                                    char type_of_quote);
-static char handle_backslash_char(struct arg_obj *ao, BKSLSH_MODE bm);
-static void set_redir_type(struct arg_obj *ao, char *arg);
+static char handle_backslash_char(BKSLSH_MODE bm);
+static void set_redir_type(char *arg);
 
 int times_double_quotes_called = 0;
 char curr_arg[BUFF_LENGTH];
 
 struct arg_obj *create_arg_obj() {
-  struct arg_obj *ao = malloc(sizeof(struct arg_obj));
-  ao->size = 0;
-  ao->capacity = 10;
+  struct arg_obj *created_ao = malloc(sizeof(struct arg_obj));
+  created_ao->size = 0;
+  created_ao->capacity = 10;
   char **initial_args = (char **)malloc(sizeof(char *) * 10);
   if (initial_args == NULL) {
     fprintf(stderr, "Failed to create arg_obj!");
     exit(EXIT_FAILURE);
   }
-  ao->args = initial_args;
-  ao->input = NULL;
-  ao->redir_type = INITIAL_VAL;
-  return ao;
+  created_ao->args = initial_args;
+  created_ao->input = NULL;
+  created_ao->redir_type = INITIAL_VAL;
+  return created_ao;
 };
 
-void expand_arg_obj(struct arg_obj *ao) {
+void expand_arg_obj() {
   ao->capacity = ao->capacity * 2;
   char **new_args = realloc(ao->args, ao->capacity * 2);
   if (new_args == NULL) {
@@ -40,7 +41,7 @@ void expand_arg_obj(struct arg_obj *ao) {
   }
 }
 
-void add_args(struct arg_obj *ao) {
+void add_args() {
   char *received_arg;
   while (*ao->curr_char != '\0') {
     /*
@@ -48,73 +49,70 @@ void add_args(struct arg_obj *ao) {
      * expand the size of arg_obj->args array
      */
     if ((ao->size + 1) >= ao->capacity) {
-      expand_arg_obj(ao);
+      expand_arg_obj();
     }
     if (strncmp(ao->curr_char, "\'", 1) == 0) {
-      received_arg = get_single_quote_arg(ao);
+      received_arg = get_single_quote_arg();
       if (strncmp(ao->curr_char, "\'", 1) == 0) {
         received_arg =
-            skip_past_adjacent_quotes_and_combine(ao, received_arg, '\'');
+            skip_past_adjacent_quotes_and_combine(received_arg, '\'');
       }
       while (*ao->curr_char == ' ') {
         ao->curr_char++;
       }
       ao->args[ao->size++] = received_arg;
     } else if (strncmp(ao->curr_char, "\"", 1) == 0) {
-      received_arg = get_double_quote_arg(ao);
+      received_arg = get_double_quote_arg();
       if (strncmp(ao->curr_char, "\"", 1) == 0) {
         received_arg =
-            skip_past_adjacent_quotes_and_combine(ao, received_arg, '\"');
+            skip_past_adjacent_quotes_and_combine(received_arg, '\"');
       }
       while (*ao->curr_char == ' ') {
         ao->curr_char++;
       }
       ao->args[ao->size++] = received_arg;
     } else {
-      received_arg = get_normal_arg(ao);
+      received_arg = get_normal_arg();
       if (strncmp(ao->curr_char, "\'\'", 2) == 0) {
         ao->curr_char++;
         received_arg =
-            skip_past_adjacent_quotes_and_combine(ao, received_arg, '\'');
+            skip_past_adjacent_quotes_and_combine(received_arg, '\'');
       } else if (strncmp(ao->curr_char, "\"\"", 2) == 0) {
         ao->curr_char++;
         received_arg =
-            skip_past_adjacent_quotes_and_combine(ao, received_arg, '\"');
+            skip_past_adjacent_quotes_and_combine(received_arg, '\"');
       }
       while (*ao->curr_char == ' ') {
         ao->curr_char++;
       }
-      set_redir_type(ao, received_arg);
+      set_redir_type(received_arg);
       ao->args[ao->size++] = received_arg;
     }
   }
 }
 
-static void set_redir_type(struct arg_obj *ao, char *arg) {
-      if (strncmp(arg, ">>", 2) == 0 ||
-          strncmp(arg, "1>>", 3) == 0) {
-        ao->redir_type = APPEND_STD_OUT;
-      } else if(strncmp(arg, "2>>", 3) == 0) {
-        ao->redir_type = APPEND_STD_ERR;
-      } else if (strncmp(arg, ">", 1) == 0 ||
-          strncmp(arg, "1>", 2) == 0) {
-        ao->redir_type = STD_OUT;
-      } else if (strncmp(arg, "2>", 2) == 0) {
-        ao->redir_type = STD_ERR;
-      }
+static void set_redir_type(char *arg) {
+  if (strncmp(arg, ">>", 2) == 0 || strncmp(arg, "1>>", 3) == 0) {
+    ao->redir_type = APPEND_STD_OUT;
+  } else if (strncmp(arg, "2>>", 3) == 0) {
+    ao->redir_type = APPEND_STD_ERR;
+  } else if (strncmp(arg, ">", 1) == 0 || strncmp(arg, "1>", 2) == 0) {
+    ao->redir_type = STD_OUT;
+  } else if (strncmp(arg, "2>", 2) == 0) {
+    ao->redir_type = STD_ERR;
+  }
 }
 
-static char *skip_past_adjacent_quotes_and_combine(struct arg_obj *ao,
-                                                   char *first_arg,
+static char *skip_past_adjacent_quotes_and_combine(char *first_arg,
                                                    char type_of_quote) {
   if (type_of_quote == '\"') {
-    char *second_arg = get_double_quote_arg(ao);
+    char *second_arg = get_double_quote_arg();
     size_t combined_size = strlen(first_arg) + strlen(second_arg) + 1;
     first_arg = (char *)realloc(first_arg, combined_size);
     strcat(first_arg, second_arg);
     return first_arg;
   } else if (type_of_quote == '\'') {
-    char *second_arg = get_single_quote_arg(ao);
+    char *second_arg = get_single_quote_arg();
     size_t combined_size = strlen(first_arg) + strlen(second_arg) + 1;
     first_arg = (char *)realloc(first_arg, combined_size);
     strcat(first_arg, second_arg);
@@ -123,12 +121,12 @@ static char *skip_past_adjacent_quotes_and_combine(struct arg_obj *ao,
   return NULL;
 }
 
-static char *get_normal_arg(struct arg_obj *ao) {
+static char *get_normal_arg() {
   size_t count = 0;
   while (*ao->curr_char != '\0' && *ao->curr_char != ' ' &&
          *ao->curr_char != '\'' && *ao->curr_char != '\"') {
     if (*ao->curr_char == '\\') {
-      curr_arg[count++] = handle_backslash_char(ao, OUTSIDE_QUOTES);
+      curr_arg[count++] = handle_backslash_char(OUTSIDE_QUOTES);
     } else {
       curr_arg[count++] = *ao->curr_char++;
     }
@@ -142,7 +140,7 @@ static char *get_normal_arg(struct arg_obj *ao) {
   return new_arg;
 }
 
-static char *get_single_quote_arg(struct arg_obj *ao) {
+static char *get_single_quote_arg() {
   ao->curr_char++; // Skip past first single quote
   size_t count = 0;
   while (*ao->curr_char != '\0' && *ao->curr_char != '\'') {
@@ -160,7 +158,7 @@ static char *get_single_quote_arg(struct arg_obj *ao) {
   return new_arg;
 }
 
-static char handle_backslash_char(struct arg_obj *ao, BKSLSH_MODE bm) {
+static char handle_backslash_char(BKSLSH_MODE bm) {
   if (*ao->curr_char != '\\') {
     fprintf(stderr, "How the fuck did you get here? %s Line %d\n", __FUNCTION__,
             __LINE__);
@@ -207,12 +205,12 @@ static char handle_backslash_char(struct arg_obj *ao, BKSLSH_MODE bm) {
   }
 }
 
-static char *get_double_quote_arg(struct arg_obj *ao) {
+static char *get_double_quote_arg() {
   ao->curr_char++; // Skip past first double quote
   size_t count = 0;
   while (*ao->curr_char != '\0' && *ao->curr_char != '\"') {
     if (*ao->curr_char == '\\') {
-      curr_arg[count++] = handle_backslash_char(ao, INSIDE_DOUBLE_QUOTES);
+      curr_arg[count++] = handle_backslash_char(INSIDE_DOUBLE_QUOTES);
     } else {
       curr_arg[count++] = *ao->curr_char++;
     }
@@ -230,7 +228,7 @@ static char *get_double_quote_arg(struct arg_obj *ao) {
   while (*ao->curr_char != '\"' && *ao->curr_char != ' ' &&
          *ao->curr_char != '\0') {
     if (*ao->curr_char == '\\') {
-      curr_arg[count++] = handle_backslash_char(ao, OUTSIDE_QUOTES);
+      curr_arg[count++] = handle_backslash_char(OUTSIDE_QUOTES);
     } else {
       curr_arg[count++] = *ao->curr_char++;
     }
@@ -244,7 +242,7 @@ static char *get_double_quote_arg(struct arg_obj *ao) {
   return new_arg;
 }
 
-void clear_args(struct arg_obj *ao) {
+void clear_args() {
   for (size_t i = 0; i < ao->size; i++) {
     free(ao->args[i]);
   }
