@@ -7,7 +7,9 @@
 static char *get_normal_arg(struct arg_obj *ao);
 static char *get_single_quote_arg(struct arg_obj *ao);
 static char *get_double_quote_arg(struct arg_obj *ao);
-static char *skip_past_adjacent_quotes_and_combine(struct arg_obj *ao, char *first_arg, char type_of_quote); 
+static char *skip_past_adjacent_quotes_and_combine(struct arg_obj *ao,
+                                                   char *first_arg,
+                                                   char type_of_quote);
 static char handle_backslash_char(struct arg_obj *ao, BKSLSH_MODE bm);
 
 int times_double_quotes_called = 0;
@@ -81,11 +83,11 @@ void add_args(struct arg_obj *ao) {
       while (*ao->curr_char == ' ') {
         ao->curr_char++;
       }
-      if (strncmp(received_arg, ">", 1) == 0) {
+      if (strncmp(received_arg, ">", 1) == 0 ||
+          strncmp(received_arg, "1>", 2) == 0) {
         ao->redir_type = STD_OUT;
-      }
-      if (strncmp(received_arg, "1>", 1) == 0) {
-        ao->redir_type = STD_OUT;
+      } else if (strncmp(received_arg, "2>", 2) == 0) {
+        ao->redir_type = STD_ERR;
       }
       ao->args[ao->size++] = received_arg;
     }
@@ -208,14 +210,15 @@ static char *get_double_quote_arg(struct arg_obj *ao) {
   if (*ao->curr_char == '\"') {
     ao->curr_char++;
   }
-  /* 
-   * running the while loop again to collect reset of argument that's adjacent to end of 
-   * quote. Example below    |
+  /*
+   * running the while loop again to collect reset of argument that's adjacent
+   * to end of quote. Example below    |
    *                         |
    *                         V
    * echo "test\"insidequotes"example\"
    * */
-  while (*ao->curr_char != '\"' && *ao->curr_char != ' ' && *ao->curr_char != '\0') {
+  while (*ao->curr_char != '\"' && *ao->curr_char != ' ' &&
+         *ao->curr_char != '\0') {
     if (*ao->curr_char == '\\') {
       curr_arg[count++] = handle_backslash_char(ao, OUTSIDE_QUOTES);
     } else {

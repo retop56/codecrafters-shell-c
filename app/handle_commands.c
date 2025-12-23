@@ -2,7 +2,9 @@
 #include "arg_obj_def.h"
 #include "argparser.h"
 #include "cc_shell.h"
+#include <fcntl.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 static char *search_for_exec(char *exec_name);
 
@@ -66,16 +68,42 @@ void handle_program_execution(struct arg_obj *ao) {
 void handle_program_execution_w_redirect(struct arg_obj *ao) {
   size_t i = 0;
   size_t size_of_full_command = 0;
-  for (; i < ao->size; i++) {
-    if (strncmp(ao->args[i], ">", 1) == 0 ||
-        strncmp(ao->args[i], "1>", 2) == 0) {
-      break;
+  switch (ao->redir_type) {
+  case STD_OUT:
+    for (; i < ao->size; i++) {
+      if (strncmp(ao->args[i], ">", 1) == 0 ||
+          strncmp(ao->args[i], "1>", 2) == 0) {
+        break;
+      }
+      size_of_full_command += strlen(ao->args[i]);
     }
-    size_of_full_command += strlen(ao->args[i]);
+    break;
+  case STD_ERR:
+    for (; i < ao->size; i++) {
+      if (strncmp(ao->args[i], "2>", 2) == 0) {
+        break;
+      }
+      size_of_full_command += strlen(ao->args[i]);
+    }
+    break;
+  case INITIAL_VAL:
+    fprintf(stderr, "ao->redir_type is INITIAL_VAL for some reason \n");
+    break;
   }
+
   size_of_full_command += i; // For spaces between each command;
   if (i == ao->size) {
-    fprintf(stderr, "Unable to find '>' or '1>' operator in ao->args!\n");
+    switch (ao->redir_type) {
+    case STD_OUT:
+      fprintf(stderr, "Unable to find '>' or '1>' operator in ao->args!\n");
+      break;
+    case STD_ERR:
+      fprintf(stderr, "Unable to find '>' or '2>' operator in ao->args!\n");
+      break;
+    case INITIAL_VAL:
+      fprintf(stderr, "ao->redir_type is INITIAL_VAL for some reason \n");
+      break;
+    }
     exit(EXIT_FAILURE);
   }
   char *full_command = (char *)malloc(sizeof(char) * size_of_full_command + 1);
@@ -86,24 +114,53 @@ void handle_program_execution_w_redirect(struct arg_obj *ao) {
     strcat(full_command, ao->args[x]);
   }
   char output_buff[BUFF_LENGTH] = {0};
-  FILE *cmd_f_ptr = popen(full_command, "r");
-  if (cmd_f_ptr == NULL) {
-    fprintf(stderr, "popen failed on line %d in %s\n", __LINE__, __FUNCTION__);
-    exit(EXIT_FAILURE);
-  }
-  FILE *output_file = fopen(ao->args[i + 1], "w");
-  if (output_file == NULL) {
-    fprintf(stderr, "fopen failed on line %d in %s\n", __LINE__, __FUNCTION__);
-    exit(EXIT_FAILURE);
-  }
+  if (ao->redir_type == STD_OUT) {
+    FILE *cmd_f_ptr = popen(full_command, "r");
+    if (cmd_f_ptr == NULL) {
+      fprintf(stderr, "popen failed on line %d in %s\n", __LINE__,
+              __FUNCTION__);
+      exit(EXIT_FAILURE);
+    }
+    FILE *output_file = fopen(ao->args[i + 1], "w");
+    if (output_file == NULL) {
+      fprintf(stderr, "fopen failed on line %d in %s\n", __LINE__,
+              __FUNCTION__);
+      exit(EXIT_FAILURE);
+    }
 
-  while (fgets(output_buff, BUFF_LENGTH, cmd_f_ptr) != NULL) {
-    fprintf(output_file, "%s", output_buff);
+    while (fgets(output_buff, BUFF_LENGTH, cmd_f_ptr) != NULL) {
+      fprintf(output_file, "%s", output_buff);
+    }
+    pclose(cmd_f_ptr);
+    fclose(output_file);
+    free(full_command);
+    return;
   }
-  pclose(cmd_f_ptr);
-  fclose(output_file);
+  if (ao->redir_type == STD_ERR) {
+    int fd = open(ao->args[i + 1], O_CREAT|O_WRONLY);
+    if (fd == -1) {
+      perror("open");
+      exit(EXIT_FAILURE);
+    }
+    pid_t pid = fork();
+    switch (pid) {
+    case -1:
+      perror("fork");
+      exit(EXIT_FAILURE);
+    case 0:
+      if ((dup2(fd, STDERR_FILENO)) == -1) {
+        perror("dup2");
+        exit(EXIT_FAILURE);
+      }
+      system(full_command);
+    default:
+      wait(&pid);
+    }
+    free(full_command);
+    return;
+  }
+  printf("You shouldn't be here (Line %d)\n", __LINE__);
 }
-
 
 char *search_for_exec(char *exec_name) {
   char *full_path = (char *)malloc(PATH_MAX * sizeof(char));
